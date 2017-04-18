@@ -1,3 +1,22 @@
+/*Copyright (C) 2017 Tom Hartill
+
+extension.js - Part of the NetSpeed Gnome Shell Extension.
+
+NetSpeed is free software; you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation; either version 3 of the License, or (at your option) any later
+version.
+
+NetSpeed is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+AppChooser; if not, see http://www.gnu.org/licenses/.
+
+An up to date version can be found at:
+https://github.com/Tomha/gnome-shell-extension-netspeed */
+
 const GLib = imports.gi.GLib;
 const Gio = imports.gi.Gio;
 
@@ -112,7 +131,6 @@ NetSpeedExtension.prototype = {
         this.totalTransmitted = throughput[1];
         Main.panel._rightBox.insert_child_at_index(this.button, 0);
         this.loop = Main.Mainloop.timeout_add_seconds(interval, Lang.bind(this, this._update));
-        this.label.set_text("enable...");  // For debug
     },
 
     disable: function () {
