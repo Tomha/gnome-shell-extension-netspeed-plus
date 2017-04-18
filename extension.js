@@ -27,7 +27,7 @@ const St = imports.gi.St;
 // Settings
 let interfaceTypes = ["eno", "enp", "wlp"];
 let interval = 1;
-let multiLine = true;
+let multiLine = false;
 let precision = 2;
 
 function NetSpeedExtension() {
