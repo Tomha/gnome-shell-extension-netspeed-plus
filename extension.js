@@ -6,119 +6,121 @@ const Main = imports.ui.main;
 const St = imports.gi.St;
 
 // Settings
-let interface_types = ["eno", "enp", "wlp"];
+let interfaceTypes = ["eno", "enp", "wlp"];
 let interval = 1;
-let multi_line = true;
+let multiLine = true;
 let precision = 2;
 
-const NetSpeedExtension = new Lang.Class({
-    Name: 'NetSpeedExtension',
+function NetSpeedExtension() {
+    this._init();
+}
 
-	_format_speed: function (speed){
-		try {
-			let units = ["B", "K", "M", "G"];
-			let index = 0;
-			while (speed >= 1000){
-				speed /= 1000;
-				index += 1;
-			}
-			let int = speed | 0;
-			let len = int.toString().length;
-			let speed_text;
+NetSpeedExtension.prototype = {
+    _formatSpeed: function (speed){
+        try {
+            let units = ["B", "K", "M", "G"];
+            let index = 0;
+            while (speed >= 1000){
+                speed /= 1000;
+                index += 1;
+            }
+            let int = speed | 0;
+            let len = int.toString().length;
+            let speedText;
 
-			let pad = "     ";
-			for (let i = 0; i < precision; i++) pad += " ";
-			if (speed == int) speed_text = (pad + speed.toString()).slice(len);
-			else speed_text = (pad + speed.toFixed(precision).toString()).slice(len + 3);
+            let pad = "     ";
+            for (let i = 0; i < precision; i++) pad += " ";
+            if (speed == int) speedText = (pad + speed.toString()).slice(len);
+            else speedText = (pad + speed.toFixed(precision).toString()).slice(len + 3);
 
-			return speed_text + units[index];
-		} catch (e) {
-			return "FORMAT ERROR"  // For debug
-		}
-	},
+            return speedText + units[index];
+        } catch (e) {
+            return "FORMAT ERROR";  // For debug
+        }
+    },
 
-	_get_received_and_transmitted: function () {
-		try {
-			let received = 0;
-			let transmitted = 0;
-			let input_file = Gio.File.new_for_path('/proc/net/dev');
-			let read_stream = input_file.read(null);
-			let data_stream = Gio.DataInputStream.new(read_stream);
-			let line;
-			while (line = data_stream.read_line(null)) {
-				line = line.toString().trim();
-				let columns = line.split(/\W+/);
-				if (columns.length < 4) break;
-				let heading = columns[0];
-				let iface_type = heading.substring(0, 3)
-				if (interface_types.indexOf(iface_type) >= 0) {
-					received += parseInt(columns[1]);
-					transmitted += parseInt(columns[9]);
-				}
-			}
-			read_stream.close(null);
-			return [received, transmitted];
-		} catch (e) {
-			return[0, 0];
-		}
-	},
+    _getReceivedAndTransmitted: function () {
+        try {
+            let received = 0;
+            let transmitted = 0;
+            let inputFile = Gio.File.new_for_path('/proc/net/dev');
+            let readStream = inputFile.read(null);
+            let dataStream = Gio.DataInputStream.new(readStream);
+            let line;
+            while (line = dataStream.read_line(null)) {
+                line = line.toString().trim();
+                let columns = line.split(/\W+/);
+                if (columns.length < 4) break;
+                let heading = columns[0];
+                let ifaceType = heading.substring(0, 3);
+                if (interfaceTypes.indexOf(ifaceType) >= 0) {
+                    received += parseInt(columns[1]);
+                    transmitted += parseInt(columns[9]);
+                }
+            }
+            readStream.close(null);
+            return [received, transmitted];
+        } catch (e) {
+            return[0, 0];
+        }
+    },
 
-	_init: function () {
-		this.total_received = 0;
-		this.total_transmitted = 0;
+    _init: function () {
+        this.totalReceived = 0;
+        this.totalTransmitted = 0;
 
-		this.button = new St.Bin({ style_class: 'panel-button',
-					          reactive: true,
-					          can_focus: true,
-					          x_fill: true,
-					          y_fill: false,
-					          track_hover: true });
-		this.label = new St.Label({ style_class: 'netspeed-label', text: "init..." });
-		this.button.set_child(this.label);
+        this.button = new St.Bin({ style_class: 'panel-button',
+                              reactive: true,
+                              can_focus: true,
+                              x_fill: true,
+                              y_fill: false,
+                              track_hover: true });
+        this.label = new St.Label({ style_class: 'netspeed-label', text: "init..." });
+        this.button.set_child(this.label);
 
-		this.loop = null;
-	},
+        this.loop = null;
+    },
 
-	_update: function () {
-		try {
-			let throughput = this._get_received_and_transmitted();
-			let received = throughput[0];
-			let transmitted = throughput[1];
+    _update: function () {
+        try {
+            let throughput = this._getReceivedAndTransmitted();
+            let received = throughput[0];
+            let transmitted = throughput[1];
 
-			let just_received = received - this.total_received;
-			let just_transmitted = transmitted - this.total_transmitted;
+            let justReceived = received - this.totalReceived;
+            let justTransmitted = transmitted - this.totalTransmitted;
 
-			this.total_received = received;
-			this.total_transmitted = transmitted;
+            this.totalReceived = received;
+            this.totalTransmitted = transmitted;
 
-			let text = "";
-			text += this._format_speed(just_received / interval) + "↓";
-			if (multi_line) text += "\n";
-			else text += " ";
-			text += this._format_speed(just_transmitted / interval) + "↑";
+            let text = "";
+            text += this._formatSpeed(justReceived / interval) + "↓";
+            if (multiLine) text += "\n";
+            else text += " ";
+            text += this._formatSpeed(justTransmitted / interval) + "↑";
 
-			this.label.set_text(text);
-		} catch (e) {
-			this.label.set_text("UPDATE ERROR");  // For debug
-		}
-		return true;
-	},
+            this.label.set_text(text);
+        } catch (e) {
+            this.label.set_text("UPDATE ERROR");  // For debug
+        }
+        return true;
+    },
 
-	enable: function () {
-		let throughput = this._get_received_and_transmitted();
-		this.total_received = throughput[0];
-		this.total_transmitted = throughput[1];
-		Main.panel._rightBox.insert_child_at_index(this.button, 0);
-		this.loop = Main.Mainloop.timeout_add_seconds(interval, Lang.bind(this, this._update));
-		this.label.set_text("enable...");  // For debug
-	},
+    enable: function () {
+        let throughput = this._getReceivedAndTransmitted();
+        this.totalReceived = throughput[0];
+        this.totalTransmitted = throughput[1];
+        Main.panel._rightBox.insert_child_at_index(this.button, 0);
+        this.loop = Main.Mainloop.timeout_add_seconds(interval, Lang.bind(this, this._update));
+        this.label.set_text("enable...");  // For debug
+    },
 
-	disable: function () {
-		Main.Mainloop.source_remote(this.loop);
-		Main.panel._rightBox.remove_child(this.button);
-	}
-});
+    disable: function () {
+        Main.Mainloop.source_remote(this.loop);
+        Main.panel._rightBox.remove_child(this.button);
+    }
+};
 
 function init() {
-	return new NetSpeedExtension();
+    return new NetSpeedExtension();
 }
