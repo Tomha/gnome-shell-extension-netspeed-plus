@@ -1,1 +1,7 @@
-{"name": "NetSpeed", "description": "Network throughput speed in the top bar", "uuid": "netspeed@tomha.github.com", "shell-version": ["3.22.3"]}
+{
+	"name": "NetSpeed",
+	"description": "Display network throughput in the panel.",
+	"uuid": "netspeed@tomha.github.com",
+	"shell-version": ["3.22.3"],
+	"version": 1
+}
