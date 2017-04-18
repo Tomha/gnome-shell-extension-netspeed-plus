@@ -1,6 +1,8 @@
 # About
 NetSpeed is (another) Gnome Shell extension providing a readout of your network throughput on the main panel.
 
+![Preview](Preview.png)
+
 I created it to familiarise myself with the Gnome Shell Extension structure, using the Simple Net Speed extension by biji (https://github.com/biji/simplenetspeed) as inspiration. Functionally it is similar to the aforementioned extension, though for simplicity's sake I have not included multiple modes, instead electing to simply display Kilo/Mega/Giga-Bytes of throughput on selected interface, per second, based on the output of `/proc/net/dev`.
 
 # Installation
