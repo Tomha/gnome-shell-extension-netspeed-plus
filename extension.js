@@ -19,21 +19,18 @@ https://github.com/Tomha/gnome-shell-extension-netspeed */
 
 const GLib = imports.gi.GLib;
 const Gio = imports.gi.Gio;
+const Pango = imports.gi.Pango;
 const St = imports.gi.St;
 
 const Lang = imports.lang;
 const Main = imports.ui.main;
 
-
-// TODO: Filter interface by unique name, not type.
-// TODO: Store bytes up/down per interface, tally for the panel display.
-// TODO: Display graph on click.
-// TODO: Width of labels needs to depend on precision.
-//          Should this be up to the user?
-//          Without the 'ch' measurement, this is hard to do automatically.
-// TODO: Implement storage of settings.
+// TODO: Implement interface filtering by name not type.
+// TODO: Implement statistics per-interface not aggregate.
+// TODO: Implement speed (and usage?) graph on left-click.
+// TODO: Implement settings storage and loading.
 // TODO: Implement prefs menu to change settings.
-// TODO: Usage count could persist across restarts
+// TODO: Implement persistent usage statistics.
 
 // Settings
 const interfaces = ['eno1', 'enp13s0', 'wlp12s0b1'];
@@ -56,8 +53,6 @@ const upColour = null;
 const sumColour = null;
 const usageColour = null;
 
-// If only Gnome CSS supported the ch measurement :(
-const labelWidth = '5em';
 const labelFamily = null;
 const labelSize = null;
 
@@ -137,14 +132,22 @@ NetSpeedExtension.prototype = {
                                    track_hover: true,
                                    child: this._labelBox});
 
-        let dnLabelStyle = this._formatStyle(dnColour, labelWidth,
-                                             labelFamily, labelSize);
-        let upLabelStyle = this._formatStyle(upColour, labelWidth,
-                                             labelFamily, labelSize);
-        let sumLabelStyle = this._formatStyle(sumColour, labelWidth,
-                                              labelFamily, labelSize);
-        let usageLabelStyle = this._formatStyle(usageColour, labelWidth,
-                                                labelFamily, labelSize);
+        // Try to find digit width of font:
+        let tempLabel = new St.Label({style: this._formatStyle(null, null,
+                                                               labelFamily,
+                                                               labelSize)});
+        let labelContext = tempLabel.create_pango_context();
+        let labelContextMetrics = labelContext.get_metrics(null, null);
+        let digitWidthUnits = labelContextMetrics.get_approximate_digit_width();
+        this._digitWidth = digitWidthUnits / 1024;
+        this._labelWidth = (6 + precision) * this._digitWidth;
+        this._labelWidthString = this._labelWidth.toString() + "px";
+        // More work than I would have liked, if only Gnome CSS had ch units :(
+
+        let dnLabelStyle = this._formatStyle(dnColour, this._labelWidthString, labelFamily, labelSize);
+        let upLabelStyle = this._formatStyle(upColour, this._labelWidthString, labelFamily, labelSize);
+        let sumLabelStyle = this._formatStyle(sumColour, this._labelWidthString, labelFamily, labelSize);
+        let usageLabelStyle = this._formatStyle(usageColour, this._labelWidthString, labelFamily, labelSize);
 
         this._dnLabel = new St.Label({style: dnLabelStyle});
         this._labelBox.add_child(this._dnLabel);
