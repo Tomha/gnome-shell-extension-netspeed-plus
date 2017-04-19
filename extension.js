@@ -1,4 +1,4 @@
-/*Copyright (C) 2017 Tom Hartill
+/* Copyright (C) 2017 Tom Hartill
 
 extension.js - Part of the NetSpeed Gnome Shell Extension.
 
@@ -25,7 +25,6 @@ const St = imports.gi.St;
 const Lang = imports.lang;
 const Main = imports.ui.main;
 
-// TODO: Implement interface filtering by name not type.
 // TODO: Implement statistics per-interface not aggregate.
 // TODO: Implement speed (and usage?) graph on left-click.
 // TODO: Implement settings storage and loading.
@@ -141,6 +140,7 @@ NetSpeedExtension.prototype = {
         let digitWidthUnits = labelContextMetrics.get_approximate_digit_width();
         this._digitWidth = digitWidthUnits / 1024;
         this._labelWidth = (6 + precision) * this._digitWidth;
+        this._labelWidth += this._digitWidth / 2; // A bit of extra padding
         this._labelWidthString = this._labelWidth.toString() + "px";
         // More work than I would have liked, if only Gnome CSS had ch units :(
 
