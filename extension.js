@@ -33,12 +33,13 @@ const Main = imports.ui.main;
 //          Without the 'ch' measurement, this is hard to do automatically.
 // TODO: Implement storage of settings.
 // TODO: Implement prefs menu to change settings.
+// TODO: Usage count could persist across restarts
 
 // Settings
-let interfaceTypes = ["eno", "enp", "wlp"];
-let interval = 1;
-let multiLine = false;
-let precision = 2;
+const interfaces = ['eno1', 'enp13s0', 'wlp12s0b1'];
+const interval = 1;
+const vertical = false;
+const precision = 2;
 
 const showDn = true;
 const showUp = true;
@@ -108,9 +109,8 @@ NetSpeedExtension.prototype = {
                 line = line.toString().trim();
                 let columns = line.split(/\W+/);
                 if (columns.length < 4) break;
-                let heading = columns[0];
-                let ifaceType = heading.substring(0, 3);
-                if (interfaceTypes.indexOf(ifaceType) >= 0) {
+                let interfaceName = columns[0];
+                if (interfaces.indexOf(interfaceName) >= 0) {
                     received += parseInt(columns[1]);
                     transmitted += parseInt(columns[9]);
                 }
@@ -128,7 +128,7 @@ NetSpeedExtension.prototype = {
         this._totalReceived = 0;
         this._totalTransmitted = 0;
 
-        this._labelBox = new St.BoxLayout({vertical: multiLine});
+        this._labelBox = new St.BoxLayout({vertical: vertical});
         this._button = new St.Bin({style_class: 'panel-button',
                                    reactive: true,
                                    can_focus: true,
