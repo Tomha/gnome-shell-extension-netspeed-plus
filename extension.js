@@ -19,10 +19,20 @@ https://github.com/Tomha/gnome-shell-extension-netspeed */
 
 const GLib = imports.gi.GLib;
 const Gio = imports.gi.Gio;
+const St = imports.gi.St;
 
 const Lang = imports.lang;
 const Main = imports.ui.main;
-const St = imports.gi.St;
+
+
+// TODO: Filter interface by unique name, not type.
+// TODO: Store bytes up/down per interface, tally for the panel display.
+// TODO: Display graph on click.
+// TODO: Width of labels needs to depend on precision.
+//          Should this be up to the user?
+//          Without the 'ch' measurement, this is hard to do automatically.
+// TODO: Implement storage of settings.
+// TODO: Implement prefs menu to change settings.
 
 // Settings
 let interfaceTypes = ["eno", "enp", "wlp"];
@@ -30,11 +40,41 @@ let interval = 1;
 let multiLine = false;
 let precision = 2;
 
+const showDn = true;
+const showUp = true;
+const showSum = true;
+const showUsage = true;
+
+const dnChar = "↓";
+const upChar = "↑";
+const sumChar = "⇵";
+const usageChar = "Σ";
+
+const dnColour = null;
+const upColour = null;
+const sumColour = null;
+const usageColour = null;
+
+// If only Gnome CSS supported the ch measurement :(
+const labelWidth = '5em';
+const labelFamily = null;
+const labelSize = null;
+
 function NetSpeedExtension() {
     this._init();
 }
 
 NetSpeedExtension.prototype = {
+    _formatStyle: function(colour, width, family, size) {
+        let styleText = '';
+        if (!!colour) styleText += ('color:' + colour + ';');
+        if (!!width) styleText += ('width:' + width + ';');
+        if (!!family) styleText += ('font-family:' + family + ';');
+        if (!!size) styleText += ('font-size:' + size + ';')
+        styleText += 'text-align:right;';
+        return styleText;
+    },
+
     _formatSpeed: function (speed){
         try {
             let units = ["B", "K", "M", "G"];
@@ -47,10 +87,8 @@ NetSpeedExtension.prototype = {
             let len = int.toString().length;
             let speedText;
 
-            let pad = "     ";
-            for (let i = 0; i < precision; i++) pad += " ";
-            if (speed == int) speedText = (pad + speed.toString()).slice(len);
-            else speedText = (pad + speed.toFixed(precision).toString()).slice(len + 3);
+            if (speed == int) speedText = (speed.toString());
+            else speedText = (speed.toFixed(precision).toString());
 
             return speedText + units[index];
         } catch (e) {
@@ -58,7 +96,7 @@ NetSpeedExtension.prototype = {
         }
     },
 
-    _getReceivedAndTransmitted: function () {
+    _getThroughput: function () {
         try {
             let received = 0;
             let transmitted = 0;
@@ -85,57 +123,101 @@ NetSpeedExtension.prototype = {
     },
 
     _init: function () {
-        this.totalReceived = 0;
-        this.totalTransmitted = 0;
+        this._isRunning = false;
 
-        this.button = new St.Bin({ style_class: 'panel-button',
-                              reactive: true,
-                              can_focus: true,
-                              x_fill: true,
-                              y_fill: false,
-                              track_hover: true });
-        this.label = new St.Label({ style_class: 'netspeed-label', text: "init..." });
-        this.button.set_child(this.label);
+        this._totalReceived = 0;
+        this._totalTransmitted = 0;
 
-        this.loop = null;
+        this._labelBox = new St.BoxLayout({vertical: multiLine});
+        this._button = new St.Bin({style_class: 'panel-button',
+                                   reactive: true,
+                                   can_focus: true,
+                                   x_fill: true,
+                                   y_fill: false,
+                                   track_hover: true,
+                                   child: this._labelBox});
+
+        let dnLabelStyle = this._formatStyle(dnColour, labelWidth,
+                                             labelFamily, labelSize);
+        let upLabelStyle = this._formatStyle(upColour, labelWidth,
+                                             labelFamily, labelSize);
+        let sumLabelStyle = this._formatStyle(sumColour, labelWidth,
+                                              labelFamily, labelSize);
+        let usageLabelStyle = this._formatStyle(usageColour, labelWidth,
+                                                labelFamily, labelSize);
+
+        this._dnLabel = new St.Label({style: dnLabelStyle});
+        this._labelBox.add_child(this._dnLabel);
+        this._dnLabel.hide();
+
+        this._upLabel = new St.Label({style: upLabelStyle});
+        this._labelBox.add_child(this._upLabel);
+        this._upLabel.hide();
+
+        this._sumLabel = new St.Label({style: sumLabelStyle});
+        this._labelBox.add_child(this._sumLabel);
+        this._sumLabel.hide();
+
+        this._usageLabel = new St.Label({style: usageLabelStyle});
+        this._labelBox.add_child(this._usageLabel);
+        this._usageLabel.hide();
+
+        this._button.connect('button-press-event',
+                             Lang.bind(this, this._onButtonClicked));
+    },
+
+    _onButtonClicked: function (button, event) {
+        if (event.get_button() == 3) {  // Right click button clears the couter
+            this._initialReceived = this._totalReceived;
+            this._initialTransmitted = this._totalTransmitted;
+            this._usageLabel.set_text(this._formatSpeed(0) + usageChar);
+        }
     },
 
     _update: function () {
         try {
-            let throughput = this._getReceivedAndTransmitted();
+            let throughput = this._getThroughput();
             let received = throughput[0];
             let transmitted = throughput[1];
 
-            let justReceived = received - this.totalReceived;
-            let justTransmitted = transmitted - this.totalTransmitted;
+            let justReceived = received - this._totalReceived;
+            let justTransmitted = transmitted - this._totalTransmitted;
 
-            this.totalReceived = received;
-            this.totalTransmitted = transmitted;
+            this._totalReceived = received;
+            this._totalTransmitted = transmitted;
 
-            let text = "";
-            text += this._formatSpeed(justReceived / interval) + "↓";
-            if (multiLine) text += "\n";
-            else text += " ";
-            text += this._formatSpeed(justTransmitted / interval) + "↑";
-
-            this.label.set_text(text);
+            this._dnLabel.set_text(this._formatSpeed(justReceived / interval) + dnChar);
+            this._upLabel.set_text(this._formatSpeed(justTransmitted / interval) + upChar);
+            this._sumLabel.set_text(this._formatSpeed((justReceived + justTransmitted) / interval) + sumChar);
+            this._usageLabel.set_text(this._formatSpeed(received - this._initialReceived + transmitted - this._initialTransmitted) + usageChar);
         } catch (e) {
-            this.label.set_text("UPDATE ERROR");  // For debug
+            this._dnLabel.set_text("UPDATE ERROR");  // For debug
         }
-        return true;
+        return this._isRunning;
     },
 
     enable: function () {
-        let throughput = this._getReceivedAndTransmitted();
-        this.totalReceived = throughput[0];
-        this.totalTransmitted = throughput[1];
-        Main.panel._rightBox.insert_child_at_index(this.button, 0);
-        this.loop = Main.Mainloop.timeout_add_seconds(interval, Lang.bind(this, this._update));
+        this._isRunning = true;
+
+        if (showDn) this._dnLabel.show();
+        if (showUp) this._upLabel.show();
+        if (showSum) this._sumLabel.show();
+        if (showUsage) this._usageLabel.show();
+
+        let throughput = this._getThroughput();
+        this._totalReceived = throughput[0];
+        this._initialReceived = throughput[0];
+        this._totalTransmitted = throughput[1];
+        this._initialTransmitted = throughput[1];
+
+        Main.panel._rightBox.insert_child_at_index(this._button, 0);
+        Main.Mainloop.timeout_add_seconds(interval,
+                                          Lang.bind(this, this._update));
     },
 
     disable: function () {
-        Main.Mainloop.source_remote(this.loop);
-        Main.panel._rightBox.remove_child(this.button);
+        this._isRunning = false
+        Main.panel._rightBox.remove_child(this._button);
     }
 };
 
