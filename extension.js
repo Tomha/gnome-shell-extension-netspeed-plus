@@ -134,7 +134,7 @@ NetSpeedExtension.prototype = {
         this._totalReceived = 0;
         this._totalTransmitted = 0;
 
-        this._labelBox = new St.BoxLayout();//{'vertical': this._displayVertical});
+        this._labelBox = new St.BoxLayout({'vertical': this._displayVertical});
         this._button = new St.Bin({style_class: 'panel-button',
                                    reactive: true,
                                    can_focus: true,
