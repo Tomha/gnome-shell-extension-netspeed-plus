@@ -4,5 +4,6 @@
 	"uuid": "netspeed@tomha.github.com",
 	"shell-version": ["3.22.3"],
 	"version": 1.1,
-	"url": "https://github.com/Tomha/gnome-shell-extension-netspeed"
+	"url": "https://github.com/Tomha/gnome-shell-extension-netspeed",
+	"settings-schema": "org.gnome.shell.extensions.netspeed"
 }

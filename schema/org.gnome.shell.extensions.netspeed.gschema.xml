@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="gnome-shell-extensions">
+    <schema path="/org/gnome/shell/extensions/netspeed/" id="org.gnome.shell.extensions.netspeed">
+	<key name="monitor-interfaces" type="as">
+            <default>["eno1", "wlp12s0b1", "enp13s0"]</default>
+            <summary></summary>
+            <description></description>
+        </key>
+	<key name="update-interval" type="i">
+            <default>1</default>
+            <range min="1" max="60"/>
+            <summary></summary>
+            <description></description>
+        </key>
+        <key name="measurement-precision" type="i">
+            <default>2</default>
+            <range min="0" max="3" />
+            <summary></summary>
+            <description></description>
+        </key>
+        <key name="display-vertical" type="b">
+            <default>false</default>
+            <summary></summary>
+            <description></description>
+        </key>
+	<key name="initial-receive-count" type="d">
+            <default>0</default>
+            <summary></summary>
+            <description></description>
+        </key>
+	<key name="initial-transmit-count" type="d">
+            <default>0</default>
+            <summary></summary>
+            <description></description>
+        </key>
+	<key name="last-boot-time" type="d">
+            <default>0</default>
+            <summary></summary>
+            <description></description>
+        </key>
+
+        <key name="show-down-label" type="b">
+            <default>true</default>
+            <summary></summary>
+            <description></description>
+        </key>
+        <key name="show-up-label" type="b">
+            <default>true</default>
+            <summary></summary>
+            <description></description>
+        </key>
+        <key name="show-total-label" type="b">
+            <default>true</default>
+            <summary></summary>
+            <description></description>
+        </key>
+        <key name="show-usage-label" type="b">
+            <default>true</default>
+            <summary></summary>
+            <description></description>
+        </key>
+        <key name="down-label-ending" type="s">
+            <default>"↓"</default>
+            <summary></summary>
+            <description></description>
+        </key>
+        <key name="up-label-ending" type="s">
+            <default>"↑"</default>
+            <summary></summary>
+            <description></description>
+        </key>
+        <key name="total-label-ending" type="s">
+            <default>"⇵"</default>
+            <summary></summary>
+            <description></description>
+        </key>
+        <key name="usage-label-ending" type="s">
+            <default>"Σ"</default>
+            <summary></summary>
+            <description></description>
+        </key>
+        <key name="down-label-colour" type="s">
+            <default>""</default>
+            <summary></summary>
+            <description></description>
+        </key>
+        <key name="up-label-colour" type="s">
+            <default>""</default>
+            <summary></summary>
+            <description></description>
+        </key>
+        <key name="total-label-colour" type="s">
+            <default>""</default>
+            <summary></summary>
+            <description></description>
+        </key>
+        <key name="usage-label-colour" type="s">
+            <default>""</default>
+            <summary></summary>
+            <description></description>
+        </key>
+        <key name="label-font-family" type="s">
+            <default>""</default>
+            <summary></summary>
+            <description></description>
+        </key>
+        <key name="label-font-size" type="i">
+            <default>0</default>
+            <range min="0" max="20" />
+            <summary></summary>
+            <description></description>
+        </key>
+    </schema>
+</schemalist>
+
