@@ -39,12 +39,15 @@ function NetSpeedExtension() {
 
 NetSpeedExtension.prototype = {
     // Internal Functions
-    _formatStyle: function (colour, family, size, width) {
+    _createLabelStyle: function (colour) {
         let styleText = '';
         if (colour) styleText += ('color:' + colour + ';');
-        if (family) styleText += ('font-family:' + family + ';');
-        if (size > 0) styleText += ('font-size:' + size + ';');
-        if (width) styleText += ('width:' + width + ';');
+        if (this._labelFontFamily) styleText += ('font-family:' +
+                                                 this._labelFontFamily + ';');
+        if (this._labelFontSize > 0) styleText += ('font-size:' +
+                                                   this._labelFontSize + ';');
+        if (this._labelWidthString) styleText += ('width:' +
+                                                  this._labelWidthString + ';');
         styleText += 'text-align:right;';
         return styleText;
     },
@@ -98,7 +101,7 @@ NetSpeedExtension.prototype = {
         this._interfaces = this._settings.get_strv('monitor-interfaces');
         this._updateInterval= this._settings.get_int('update-interval');
         this._measurementPrecision =
-            this._settings.get_int('measurement-precision');
+          this._settings.get_int('measurement-precision');
         this._displayVertical = this._settings.get_boolean('display-vertical');
 
         this._showDownLabel = this._settings.get_boolean('show-down-label');
@@ -109,9 +112,12 @@ NetSpeedExtension.prototype = {
         this._downLabelEnding = this._settings.get_string('down-label-ending');
         this._upLabelEnding = this._settings.get_string('up-label-ending');
         this._totalLabelEnding =
-            this._settings.get_string('total-label-ending');
+          this._settings.get_string('total-label-ending');
         this._usageLabelEnding =
-            this._settings.get_string('usage-label-ending');
+          this._settings.get_string('usage-label-ending');
+
+        this._labelFontFamily = this._settings.get_string('label-font-family');
+        this._labelFontSize = this._settings.get_string('label-font-size');
     },
 
     _update: function () {
@@ -166,16 +172,9 @@ NetSpeedExtension.prototype = {
     // Gnome Shell Functions
 
     _init: function () {
-        this._settings = Settings.getSettings();
-        this._loadSettings();
-
         this._isRunning = false;
 
-        this._totalReceived = 0;
-        this._totalTransmitted = 0;
-        this._initialUsage = 0;
-
-        this._labelBox = new St.BoxLayout({'vertical': this._displayVertical});
+        this._labelBox = new St.BoxLayout();
         this._button = new St.Bin({style_class: 'panel-button',
                                    reactive: true,
                                    can_focus: true,
@@ -184,82 +183,66 @@ NetSpeedExtension.prototype = {
                                    track_hover: true,
                                    child: this._labelBox})
 
+        this._downLabel = new St.Label();
+        this._labelBox.add_child(this._downLabel);
+        this._downLabel.hide();
+
+        this._upLabel = new St.Label();
+        this._labelBox.add_child(this._upLabel);
+        this._upLabel.hide();
+
+        this._totalLabel = new St.Label();
+        this._labelBox.add_child(this._totalLabel);
+        this._totalLabel.hide();
+
+        this._usageLabel = new St.Label();
+        this._labelBox.add_child(this._usageLabel);
+        this._usageLabel.hide();
+
+        this._button.connect('button-press-event',
+                             Lang.bind(this, this._onButtonClicked));
+    },
+
+    enable: function () {
+        this._settings = Settings.getSettings();
+        this._loadSettings();
+
+        this._isRunning = true;
+
         // Try to find digit width of font:
-        let tempLabel = new St.Label({style: this._formatStyle(null,
-                                                               null,
-                                                               labelFontFamily,
-                                                               labelFontSize)});
+        let tempLabel = new St.Label({style: this._createLabelStyle()});
         let labelContext = tempLabel.create_pango_context();
         let labelContextMetrics = labelContext.get_metrics(null, null);
         let digitWidthUnits = labelContextMetrics.get_approximate_digit_width();
         let digitWidth = digitWidthUnits / 1024;
         let labelWidth = (6 + this._measurementPrecision) * digitWidth;
         labelWidth += digitWidth / 2; // A bit of extra padding
-        let labelWidthString = labelWidth.toString() + "px";
+        this._labelWidthString = labelWidth.toString() + "px";
         // More work than I would have liked, if only Gnome CSS had ch units :(
 
-        this._speedDown = 0;
-        this._speedUp = 0;
-        this._speedTotal = 0;
-        this._usageTotal = 0;
-
+        // Set up labels
         let downLabelColour = this._settings.get_string('down-label-colour');
         let upLabelColour = this._settings.get_string('up-label-colour');
         let totalLabelColour = this._settings.get_string('total-label-colour');
         let usageLabelColour = this._settings.get_string('usage-label-colour');
 
-        let labelFontFamily = this._settings.get_string('label-font-family');
-        let labelFontSize = this._settings.get_string('label-font-size');
-
-        let dnLabelStyle = this._formatStyle(downLabelColour,
-                                               labelFontFamily,
-                                               labelFontSize,
-                                               labelWidthString);
-        let upLabelStyle = this._formatStyle(upLabelColour,
-                                               labelWidthString,
-                                               labelFontSize,
-                                               labelWidthString);
-        let sumLabelStyle = this._formatStyle(totalLabelColour,
-                                                labelFontFamily,
-                                                labelFontSize,
-                                                labelWidthString);
-        let usageLabelStyle = this._formatStyle(usageLabelColour,
-                                                  labelFontFamily,
-                                                  labelFontSize,
-                                                  labelWidthString);
-
-        this._downLabel = new St.Label({style: dnLabelStyle});
-        this._labelBox.add_child(this._downLabel);
-        this._downLabel.hide();
-
-        this._upLabel = new St.Label({style: upLabelStyle});
-        this._labelBox.add_child(this._upLabel);
-        this._upLabel.hide();
-
-        this._totalLabel = new St.Label({style: sumLabelStyle});
-        this._labelBox.add_child(this._totalLabel);
-        this._totalLabel.hide();
-
-        this._usageLabel = new St.Label({style: usageLabelStyle});
-        this._labelBox.add_child(this._usageLabel);
-        this._usageLabel.hide();
-
-        this._button.connect('button-press-event',
-                               Lang.bind(this, this._onButtonClicked));
-    },
-
-    enable: function () {
-        this._isRunning = true;
-
-        this._speedDown = 0;
-        this._speedUp = 0;
-        this._speedTotal = 0;
-        this._usageTotal = 0;
+        this._downLabel.set_style(this._createLabelStyle(downLabelColour));
+        this._upLabel.set_style(this._createLabelStyle(upLabelColour));
+        this._totalLabel.set_style(this._createLabelStyle(totalLabelColour));
+        this._usageLabel.set_style(this._createLabelStyle(usageLabelColour));
 
         if (this._showDownLabel) this._downLabel.show();
         if (this._showUpLabel) this._upLabel.show();
         if (this._showTotalLabel) this._totalLabel.show();
         if (this._showUsageLabel) this._usageLabel.show();
+
+        this._labelBox.set_vertical(this._displayVertical);
+
+        // Set initial values
+        this._speedDown = 0;
+        this._speedUp = 0;
+        this._speedTotal = 0;
+        this._usageTotal = 0;
 
         let throughput = this._getThroughput();
         this._totalReceived = throughput[0];
@@ -270,24 +253,28 @@ NetSpeedExtension.prototype = {
         if (lastBootTime > 0 & lastBootTime != thisBootTime) {
             this._initialReceived = this._initialTransmitted = 0;
         } else {
-            this._initialReceived = this._settings.get_double('initial-receive-count');
-            this._initialTransmitted = this._settings.get_double('initial-transmit-count');
+            this._initialReceived =
+              this._settings.get_double('initial-receive-count');
+            this._initialTransmitted =
+              this._settings.get_double('initial-transmit-count');
         }
+
+        // Begin
 
         Main.panel._rightBox.insert_child_at_index(this._button, 0);
         Main.Mainloop.timeout_add_seconds(this._updateInterval,
-                                            Lang.bind(this, this._update));
+                                          Lang.bind(this, this._update));
     },
 
     disable: function () {
         this._isRunning = false
 
         this._settings.set_double('initial-receive-count',
-                                    this._initialReceived);
+                                  this._initialReceived);
         this._settings.set_double('initial-transmit-count',
-                                    this._initialTransmitted);
+                                  this._initialTransmitted);
         this._settings.set_double('last-boot-time',
-                                    this._getBootTime());
+                                  this._getBootTime());
         this._settings.apply();
 
         Main.panel._rightBox.remove_child(this._button);
