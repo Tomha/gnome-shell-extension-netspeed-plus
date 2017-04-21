@@ -38,44 +38,35 @@ function NetSpeedExtension() {
 }
 
 NetSpeedExtension.prototype = {
-    _formatStyle: function(colour, width, family, size) {
+    // Internal Functions
+    _formatStyle: function (colour, family, size, width) {
         let styleText = '';
         if (colour) styleText += ('color:' + colour + ';');
-        if (width) styleText += ('width:' + width + ';');
         if (family) styleText += ('font-family:' + family + ';');
-        if (size > 0) styleText += ('font-size:' + size + ';')
+        if (size > 0) styleText += ('font-size:' + size + ';');
+        if (width) styleText += ('width:' + width + ';');
         styleText += 'text-align:right;';
         return styleText;
     },
 
     _formatSpeed: function (speed) {
-        try {
-            let units = ["B", "K", "M", "G"];
-            let index = 0;
-            while (speed >= 1000){
-                speed /= 1000;
-                index += 1;
-            }
-            let int = speed | 0;
-            let len = int.toString().length;
-            let speedText;
-
-            if (speed == int) speedText = (speed.toString());
-            else speedText = (speed.toFixed(this._measurementPrecision).toString());
-
-            return speedText + units[index];
-        } catch (e) {
-            return "FORMAT ERROR";  // For debug
+        let unit = 0;
+        while (speed >= 1000){
+            speed /= 1000;
+            unit += 1;
         }
+
+        let text;
+        if (speed == (speed | 0)) text = (speed.toString()); // If speed is int
+        else text = (speed.toFixed(this._measurementPrecision).toString());
+
+        return text + ["B", "K", "M", "G"][unit];
     },
 
     _getBootTime: function () {
-        let inputFile = Gio.File.new_for_path('/proc/uptime');
-        let readStream = inputFile.read(null);
-        let dataStream = Gio.DataInputStream.new(readStream);
-        let line = dataStream.read_line(null).toString().trim().split(/\W+/);
-        readStream.close(null);
-        let upTime = parseInt(line[0]);
+        let fileContentsRaw = GLib.file_get_contents('/proc/uptime');
+        let fileContents = fileContentsRaw[1].toString().split(/\W+/);
+        let upTime = parseInt(fileContents[0]);
         let timeNow = new Date().getTime();
         return (timeNow - upTime);
     },
@@ -84,55 +75,105 @@ NetSpeedExtension.prototype = {
         try {
             let received = 0;
             let transmitted = 0;
-            let inputFile = Gio.File.new_for_path('/proc/net/dev');
-            let readStream = inputFile.read(null);
-            let dataStream = Gio.DataInputStream.new(readStream);
-            let line;
-            while (line = dataStream.read_line(null)) {
-                line = line.toString().trim();
-                let columns = line.split(/\W+/);
-                if (columns.length < 4) break;
-                let interfaceName = columns[0];
-                if (this._interfaces.indexOf(interfaceName) >= 0) {
-                    received += parseInt(columns[1]);
-                    transmitted += parseInt(columns[9]);
+
+            let fileContentsRaw = GLib.file_get_contents('/proc/net/dev');
+            let fileContents = fileContentsRaw[1].toString().split('\n');
+            // Skip the first 2 header lines:
+            for (let i = 2; i < fileContents.length; i++) {
+                let lineData = fileContents[i].trim().split(/\W+/);
+                if (this._interfaces.indexOf(lineData[0]) >= 0) {
+                    received += parseInt(lineData[1]);
+                    transmitted += parseInt(lineData[9]);
                 }
             }
-            readStream.close(null);
+
             return [received, transmitted];
         } catch (e) {
-            return[0, 0];
+            // Will cause 0 increase in stats over this interval
+            return[this._totalReceived, this._totalTransmitted];
         }
     },
 
-    _init: function () {
-        this._settings = Settings.getSettings();
-
-        this._isRunning = false;
-
-        // Lots of settings
+    _loadSettings: function() {
         this._interfaces = this._settings.get_strv('monitor-interfaces');
-
         this._updateInterval= this._settings.get_int('update-interval');
-        this._measurementPrecision = this._settings.get_int('measurement-precision');
+        this._measurementPrecision =
+            this._settings.get_int('measurement-precision');
         this._displayVertical = this._settings.get_boolean('display-vertical');
-        this._initialUsage = 0;
+
+        this._showDownLabel = this._settings.get_boolean('show-down-label');
+        this._showUpLabel = this._settings.get_boolean('show-up-label');
+        this._showTotalLabel = this._settings.get_boolean('show-total-label');
+        this._showUsageLabel =this._settings.get_boolean('show-usage-label');
 
         this._downLabelEnding = this._settings.get_string('down-label-ending');
         this._upLabelEnding = this._settings.get_string('up-label-ending');
-        this._totalLabelEnding = this._settings.get_string('total-label-ending');
-        this._usageLabelEnding = this._settings.get_string('usage-label-ending');
+        this._totalLabelEnding =
+            this._settings.get_string('total-label-ending');
+        this._usageLabelEnding =
+            this._settings.get_string('usage-label-ending');
+    },
 
-        let downLabelColour = this._settings.get_string('down-label-colour');
-        let upLabelColour = this._settings.get_string('up-label-colour');
-        let totalLabelColour = this._settings.get_string('total-label-colour');
-        let usageLabelColour = this._settings.get_string('usage-label-colour');
+    _update: function () {
+        let throughput = this._getThroughput();
+        let received = throughput[0];
+        let transmitted = throughput[1];
 
-        let labelFontFamily = this._settings.get_string('label-font-family');
-        let labelFontSize = this._settings.get_string('label-font-size');
+        let justReceived = received - this._totalReceived;
+        let justTransmitted = transmitted - this._totalTransmitted;
+
+        this._totalReceived = received;
+        this._totalTransmitted = transmitted;
+
+        this._speedDown = justReceived / this._updateInterval;
+        this._speedUp = justTransmitted / this._updateInterval;
+        this._speedTotal = this._speedDown + this._speedUp;
+        this._usageTotal = received - this._initialReceived +
+                             transmitted - this._initialTransmitted;
+
+        // No need to update text for hidden labels
+        if (this._showDownLabel) {
+            this._downLabel.set_text(this._formatSpeed(this._speedDown) +
+                                       this._downLabelEnding);
+        }
+        if (this._showUpLabel) {
+            this._upLabel.set_text(this._formatSpeed(this._speedUp) +
+                                     this._upLabelEnding);
+        }
+        if (this._showTotalLabel) {
+            this._totalLabel.set_text(this._formatSpeed(this._speedTotal) +
+                                        this._totalLabelEnding);
+        }
+        if (this._showUsageLabel){
+            this._usageLabel.set_text(this._formatSpeed(this._usageTotal) +
+                                        this._usageLabelEnding);
+        }
+
+        // Return false if not meant to update again
+        return this._isRunning;
+    },
+
+    // Event Handler Functions
+
+    _onButtonClicked: function (button, event) {
+        if (event.get_button() == 3) {  // Right click button clears the couter
+            this._initialReceived = this._totalReceived;
+            this._initialTransmitted = this._totalTransmitted;
+            this._usageLabel.set_text("0B" + this._usageLabelEnding);
+        }
+    },
+
+    // Gnome Shell Functions
+
+    _init: function () {
+        this._settings = Settings.getSettings();
+        this._loadSettings();
+
+        this._isRunning = false;
 
         this._totalReceived = 0;
         this._totalTransmitted = 0;
+        this._initialUsage = 0;
 
         this._labelBox = new St.BoxLayout({'vertical': this._displayVertical});
         this._button = new St.Bin({style_class: 'panel-button',
@@ -141,7 +182,7 @@ NetSpeedExtension.prototype = {
                                    x_fill: true,
                                    y_fill: false,
                                    track_hover: true,
-                                   child: this._labelBox});
+                                   child: this._labelBox})
 
         // Try to find digit width of font:
         let tempLabel = new St.Label({style: this._formatStyle(null,
@@ -162,22 +203,30 @@ NetSpeedExtension.prototype = {
         this._speedTotal = 0;
         this._usageTotal = 0;
 
+        let downLabelColour = this._settings.get_string('down-label-colour');
+        let upLabelColour = this._settings.get_string('up-label-colour');
+        let totalLabelColour = this._settings.get_string('total-label-colour');
+        let usageLabelColour = this._settings.get_string('usage-label-colour');
+
+        let labelFontFamily = this._settings.get_string('label-font-family');
+        let labelFontSize = this._settings.get_string('label-font-size');
+
         let dnLabelStyle = this._formatStyle(downLabelColour,
-                                             labelWidthString,
-                                             labelFontFamily,
-                                             labelFontSize);
+                                               labelFontFamily,
+                                               labelFontSize,
+                                               labelWidthString);
         let upLabelStyle = this._formatStyle(upLabelColour,
-                                             labelWidthString,
-                                             labelFontFamily,
-                                             labelFontSize);
+                                               labelWidthString,
+                                               labelFontSize,
+                                               labelWidthString);
         let sumLabelStyle = this._formatStyle(totalLabelColour,
-                                              labelWidthString,
-                                              labelFontFamily,
-                                              labelFontSize);
-        let usageLabelStyle = this._formatStyle(usageLabelColour,
-                                                labelWidthString,
                                                 labelFontFamily,
-                                                labelFontSize);
+                                                labelFontSize,
+                                                labelWidthString);
+        let usageLabelStyle = this._formatStyle(usageLabelColour,
+                                                  labelFontFamily,
+                                                  labelFontSize,
+                                                  labelWidthString);
 
         this._downLabel = new St.Label({style: dnLabelStyle});
         this._labelBox.add_child(this._downLabel);
@@ -196,44 +245,7 @@ NetSpeedExtension.prototype = {
         this._usageLabel.hide();
 
         this._button.connect('button-press-event',
-                             Lang.bind(this, this._onButtonClicked));
-    },
-
-    _onButtonClicked: function (button, event) {
-        if (event.get_button() == 3) {  // Right click button clears the couter
-            this._initialReceived = this._totalReceived;
-            this._initialTransmitted = this._totalTransmitted;
-            this._usageLabel.set_text(this._formatSpeed(0) + usageChar);
-        }
-    },
-
-    _update: function () {
-        let throughput = this._getThroughput();
-        let received = throughput[0];
-        let transmitted = throughput[1];
-
-        let justReceived = received - this._totalReceived;
-        let justTransmitted = transmitted - this._totalTransmitted;
-
-        this._totalReceived = received;
-        this._totalTransmitted = transmitted;
-
-        this._speedDown = justReceived / this._updateInterval;
-        this._speedUp = justTransmitted / this._updateInterval;
-        this._speedTotal = this._speedDown + this._speedUp;
-        this._usageTotal = received - this._initialReceived +
-                             transmitted - this._initialTransmitted;
-
-        this._downLabel.set_text(this._formatSpeed(this._speedDown) +
-                                 this._downLabelEnding);
-        this._upLabel.set_text(this._formatSpeed(this._speedUp) +
-                                 this._upLabelEnding);
-        this._totalLabel.set_text(this._formatSpeed(this._speedTotal) +
-                                  this._totalLabelEnding);
-        this._usageLabel.set_text(this._formatSpeed(this._usageTotal) +
-                                    this._usageLabelEnding);
-
-        return this._isRunning;
+                               Lang.bind(this, this._onButtonClicked));
     },
 
     enable: function () {
@@ -244,18 +256,10 @@ NetSpeedExtension.prototype = {
         this._speedTotal = 0;
         this._usageTotal = 0;
 
-        if (this._settings.get_boolean('show-down-label')) {
-            this._downLabel.show();
-        }
-        if (this._settings.get_boolean('show-up-label')) {
-            this._upLabel.show();
-        }
-        if (this._settings.get_boolean('show-total-label')) {
-            this._totalLabel.show();
-        }
-        if (this._settings.get_boolean('show-usage-label')) {
-            this._usageLabel.show();
-        }
+        if (this._showDownLabel) this._downLabel.show();
+        if (this._showUpLabel) this._upLabel.show();
+        if (this._showTotalLabel) this._totalLabel.show();
+        if (this._showUsageLabel) this._usageLabel.show();
 
         let throughput = this._getThroughput();
         this._totalReceived = throughput[0];
@@ -263,7 +267,7 @@ NetSpeedExtension.prototype = {
 
         let lastBootTime = this._settings.get_int('last-boot-time');
         let thisBootTime = this._getBootTime();
-        if (lastBootTime > 0 && lastBootTime != thisBootTime) {
+        if (lastBootTime > 0 & lastBootTime != thisBootTime) {
             this._initialReceived = this._initialTransmitted = 0;
         } else {
             this._initialReceived = this._settings.get_double('initial-receive-count');
@@ -272,16 +276,20 @@ NetSpeedExtension.prototype = {
 
         Main.panel._rightBox.insert_child_at_index(this._button, 0);
         Main.Mainloop.timeout_add_seconds(this._updateInterval,
-                                          Lang.bind(this, this._update));
+                                            Lang.bind(this, this._update));
     },
 
     disable: function () {
         this._isRunning = false
-        let bootTime = this._getBootTime();
-        this._settings.set_double('initial-receive-count', this._initialReceived);
-        this._settings.set_double('initial-transmit-count', this._initialTransmitted);
-        this._settings.set_double('last-boot-time', bootTime);
+
+        this._settings.set_double('initial-receive-count',
+                                    this._initialReceived);
+        this._settings.set_double('initial-transmit-count',
+                                    this._initialTransmitted);
+        this._settings.set_double('last-boot-time',
+                                    this._getBootTime());
         this._settings.apply();
+
         Main.panel._rightBox.remove_child(this._button);
     }
 };
