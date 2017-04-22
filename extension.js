@@ -36,17 +36,26 @@ function NetSpeedExtension() {
 NetSpeedExtension.prototype = {
     // Internal Functions
     _createLabelStyle: function (labelName) {
-        const labelNames = ['down', 'up', 'total', 'usage']
+        let labelNames = ['down', 'up', 'total', 'usage']
+        let labelColours = [this._customSpeedDownColour,
+                            this._customSpeedUpColour,
+                            this._customSpeedTotalColour,
+                            this._customUsageTotalColour];
+
+        let labelIndex = labelNames.indexOf(labelName);
+        if (labelIndex < 0) throw new Error ("Invalid label name " + labelName);
 
         let styleText = '';
-        if (colour) styleText += ('color:' + colour + ';');
-        if (this._labelFontFamily != "Shell Theme") styleText +=
-              ('font-family:' + this._labelFontFamily + ';');
-
-        if (this._labelFontSize > 0) styleText += ('font-size:' +
-                                                   this._labelFontSize + ';');
-        if (this._labelWidthString) styleText += ('width:' +
-                                                  this._labelWidthString + ';');
+        if (this._useCustomFontColours) {
+            styleText += ('color:' + labelColours[labelIndex] + ';');
+        }
+        if (this._useCustomFontFamily){
+            styleText += ('font-family:' + this._customFontFamily + ';');
+        }
+        if (this._useCustomFontSize > 0) {
+            styleText += ('font-size:' + this._customFontSize + 'pt;');
+        }
+        styleText += ('width:' + this._labelWidth + 'px;');
         styleText += 'text-align:right;';
         return styleText;
     },
@@ -151,22 +160,23 @@ NetSpeedExtension.prototype = {
         this._usageTotal = received - this._initialReceived +
                              transmitted - this._initialTransmitted;
 
+        // TODO: Use custom decorations if it is enabled
         // No need to update text for hidden labels
         if (this._showSpeedDown) {
             this._downLabel.set_text(this._formatSpeed(this._speedDown) +
-                                       this._downLabelEnding);
+                                       this._speedDownDecoration);
         }
         if (this._showSpeedUp) {
             this._upLabel.set_text(this._formatSpeed(this._speedUp) +
-                                     this._upLabelEnding);
+                                     this._speedUpDecoration);
         }
         if (this._showSpeedTotal) {
             this._totalLabel.set_text(this._formatSpeed(this._speedTotal) +
-                                        this._totalLabelEnding);
+                                        this._speedTotalDecoration);
         }
         if (this._showUsageTotal){
             this._usageLabel.set_text(this._formatSpeed(this._usageTotal) +
-                                        this._usageLabelEnding);
+                                        this._usageTotalDecoration);
         }
 
         // Return false if not meant to update again
@@ -179,7 +189,7 @@ NetSpeedExtension.prototype = {
         if (event.get_button() == 3) {  // Right click button clears the couter
             this._initialReceived = this._totalReceived;
             this._initialTransmitted = this._totalTransmitted;
-            this._usageLabel.set_text("0B" + this._usageLabelEnding);
+            this._usageLabel.set_text("0B" + this._usageTotalDecoration);
         }
     },
 
@@ -223,20 +233,48 @@ NetSpeedExtension.prototype = {
 
         this._isRunning = true;
 
-        // TODO: Update width to accomodate custom decoration
+        // TODO: Optimise and seperate to different function
         // Try to find digit width of font:
-        let tempLabel = new St.Label({style: this._createLabelStyle()});
+        let tempLabel = new St.Label({style: this._createLabelStyle('down')});
         let labelContext = tempLabel.create_pango_context();
         let labelContextMetrics = labelContext.get_metrics(null, null);
         let digitWidthUnits = labelContextMetrics.get_approximate_digit_width();
-        let digitWidth = digitWidthUnits / 1024;
-        let speedWidth = 5;
-        let decorationWidth = 1;
-        if self._useCustomDecorations
-        let labelWidth = (6 + this._decimalPlace) * digitWidth;
-        labelWidth += digitWidth / 2; // A bit of extra padding
-        this._labelWidthString = labelWidth.toString() + "px";
+        let digitWidthPixels = digitWidthUnits / 1024;
+        let baseWidth = 4; // For 999B/999M/999G
+        let decimalWidth = 0; // For no decimal place
+        if (this._decimalPlace > 0) {
+            decimalWidth = this._decimalPlace + 1; // Digits after d.p + the d.p
+        }
+        let decorationWidth = 1; // Default decoratin width
+        if (this._useCustomDecorations) {
+            let largest = this._customSpeedDownDecoration.length;
+            if (this._customSpeedUpDecoration.length > largest) {
+                largest = this._customSpeedUpDecoration.length;
+            }
+            if (this._customSpeedTotalDecoration.length > largest) {
+                largest = this._customSpeedTotalDecoration.length;
+            }
+            if (this._customUsageTotalDecoration.length > largest) {
+                largest = this._customUsageTotalDecoration.length;
+            }
+            if (largest > decorationWidth) decorationWidth = largest;
+        }
+        let labelWidth = baseWidth + decimalWidth + decorationWidth;
+        // Set label width in pixels with half a digit's width in padding
+        this._labelWidth = (labelWidth + 0.5) * digitWidthPixels;
         // More work than I would have liked, if only Gnome CSS had ch units :(
+
+        if (this._useCustomDecorations) {
+            this._speedDownDecoration = this._customSpeedDownDecoration;
+            this._speedUpDecoration = this._customSpeedUpDecoration;
+            this._speedTotalDecoration = this._customSpeedTotalDecoration;
+            this._usageTotalDecoration = this._customUsageTotalDecoration;
+        } else {
+            this._speedDownDecoration = '↓';
+            this._speedUpDecoration = '↑';
+            this._speedTotalDecoration = '⇵';
+            this._usageTotalDecoration = 'Σ';
+        }
 
         this._downLabel.set_style(this._createLabelStyle('down'));
         this._upLabel.set_style(this._createLabelStyle('up'));
