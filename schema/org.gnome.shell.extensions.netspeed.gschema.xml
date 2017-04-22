@@ -3,134 +3,133 @@
     <schema path="/org/gnome/shell/extensions/netspeed/" id="org.gnome.shell.extensions.netspeed">
 	<key name="interfaces" type="as">
             <default>["eno1", "wlp12s0b1", "enp13s0"]</default>
-            <summary></summary>
-            <description></description>
+            <summary>Interfaces to monitor.</summary>
+            <description>A list of interface names to track statistics on.</description>
         </key>
 	<key name="update-interval" type="i">
             <default>1</default>
             <range min="1" max="60"/>
-            <summary></summary>
-            <description></description>
+            <summary>Seconds between updates.</summary>
+            <description>How often (in seconds) to update interface statistics.</description>
         </key>
         <key name="display-vertical" type="b">
             <default>false</default>
-            <summary></summary>
-            <description></description>
+            <summary>Whether to display vertically.</summary>
+            <description>When set to true statistics will be displayed one above another, rather than side by side. Requires that the panel is thick enough to accomodate multiple lines of text.</description>
         </key>
         <key name="decimal-place" type="i">
             <default>2</default>
             <range min="0" max="3" />
-            <summary></summary>
-            <description></description>
+            <summary>Decimal places to use in measurements.</summary>
+            <description>How many decimal places to use in measurements.</description>
         </key>
 	<key name="custom-font-family" type="s">
             <default>"monospace"</default>
-            <summary></summary>
-            <description></description>
+            <summary>Custom font family for display of statistics.</summary>
+            <description>Generic CSS font family to display statistics in, instead of the default for your shell theme.</description>
         </key>
         <key name="custom-font-size" type="i">
             <default>11</default>
             <range min="1" max="24" />
-            <summary></summary>
-            <description></description>
+            <summary>Custom font size for display of statistics.</summary>
+            <description>Font size in pt to display statistics in, instead of the default for your shell theme.</description>
         </key>
 	<key name="use-custom-font-family" type="b">
             <default>false</default>
-            <summary></summary>
-            <description></description>
+            <summary>Whether to use a custom font family.</summary>
+            <description>Enables the custom font family for display of all statistics.</description>
         </key>
 	<key name="use-custom-font-size" type="b">
             <default>false</default>
-            <summary></summary>
-            <description></description>
+            <summary>Whether to use a custom font size.</summary>
+            <description>Enables the custom font size for display of all statistics.</description>
         </key>
 	<key name="use-custom-font-colours" type="b">
             <default>false</default>
-            <summary></summary>
-            <description></description>
+            <summary>Whether to use custom font colours.</summary>
+            <description>Enables custom font colours for display of each statistic.</description>
         </key>
 	<key name="use-custom-decorations" type="b">
             <default>false</default>
-            <summary></summary>
-            <description></description>
+            <summary>Whether to use custom statistic decorations.</summary>
+            <description>Enables use of custom text at the end of each statistic.</description>
         </key>
 	<key name="show-speed-down" type="b">
             <default>true</default>
-            <summary></summary>
-            <description></description>
+            <summary>Whether to show current download speed.</summary>
+            <description>Enables the display of the current net download speed across all monitored interfaces.</description>
         </key>
         <key name="show-speed-up" type="b">
             <default>true</default>
-            <summary></summary>
-            <description></description>
+            <summary>Whether to show current upload speed.</summary>
+            <description>Enables the display of the current net upload speed across all monitored interfaces.</description>
         </key>
         <key name="show-speed-total" type="b">
             <default>true</default>
-            <summary></summary>
-            <description></description>
+            <summary>Whether to show current total speed.</summary>
+            <description>Enables the display of the current total speed across all tracked interfaces.</description>
         </key>
         <key name="show-usage-total" type="b">
             <default>true</default>
-            <summary></summary>
-            <description></description>
+            <summary>Whether to show total usage since last reboot or reset.</summary>
+            <description>Enables the display of the total network usage on tracked interfaces since the last reboot, or the last usage reset, whichever was more recent.</description>
         </key>
         <key name="custom-speed-down-colour" type="s">
             <default>"#FFFFFF"</default>
-            <summary></summary>
-            <description></description>
+            <summary>Custom colour for the download speed statistic.</summary>
+            <description>A custom colour to display the download speed statistic in, as a hex colour code.</description>
         </key>
         <key name="custom-speed-up-colour" type="s">
             <default>"#FFFFFF"</default>
-            <summary></summary>
-            <description></description>
+            <summary>Custom colour for the upload speed statistic.</summary>
+            <description>A custom colour to display the upload speed statistic in, as a hex colour code.</description>
         </key>
         <key name="custom-speed-total-colour" type="s">
             <default>"#FFFFFF"</default>
-            <summary></summary>
-            <description></description>
+            <summary>Custom colour for the total speed statistic.</summary>
+            <description>A custom colour to display the total speed statistic in, as a hex colour code.</description>
         </key>
         <key name="custom-usage-total-colour" type="s">
             <default>"#FFFFFF"</default>
-            <summary></summary>
-            <description></description>
+            <summary>Custom colour for total usage statistic.</summary>
+            <description>A custom colour to display the total usage statistic in, as a hex colour code.</description>
 	</key>
         <key name="custom-speed-down-decoration" type="s">
-            <default>"Bps D"</default>
-            <summary></summary>
-            <description></description>
+            <default>" D"</default>
+            <summary>Custom text to decorate download speed statistic with.</summary>
+            <description>A custom string which can be placed at the end of the download speed statistic.</description>
         </key>
         <key name="custom-speed-up-decoration" type="s">
-            <default>"Bps U"</default>
-            <summary></summary>
-            <description></description>
+            <default>" U"</default>
+            <summary>Custom text to decorate download speed statistic with.</summary>
+            <description>A custom string which can be placed at the end of the upload speed statistic.</description>
         </key>
         <key name="custom-speed-total-decoration" type="s">
-            <default>"Bps T"</default>
-            <summary></summary>
-            <description></description>
+            <default>" T"</default>
+            <summary>Custom text to decorate download speed statistic with.</summary>
+            <description>A custom string which can be placed at the end of the total speed statistic.</description>
         </key>
         <key name="custom-usage-total-decoration" type="s">
-            <default>"B"</default>
-            <summary></summary>
-            <description></description>
+            <default>" U"</default>
+            <summary>Custom text to decorate download speed statistic with.</summary>
+            <description>A custom string which can be placed at the end of the total usage statistic.</description>
 	</key>
 
 	<key name="initial-receive-count" type="d">
             <default>0</default>
-            <summary></summary>
-            <description></description>
+            <summary>Total initial received bytes saved from last session.</summary>
+            <description>Total received bytes from when the extension was last enabled. Used to persist usage records across shell restarts.</description>
         </key>
 	<key name="initial-transmit-count" type="d">
             <default>0</default>
-            <summary></summary>
-            <description></description>
+            <summary>Total initial transmitted bytes saved from last session.</summary>
+            <description>Total transmitted bytes from when the extension was last enabled. Used to persist usage records across shell restarts.</description>
         </key>
 	<key name="last-boot-time" type="d">
             <default>0</default>
-            <summary></summary>
-            <description></description>
+            <summary>Boot time as of last time the extension was run.</summary>
+            <description>Boot time of the system when the extension was last disabled. Used to check of previous initial recieve/transmit counts should be used.</description>
         </key>
-
     </schema>
 </schemalist>
 
