@@ -29,21 +29,20 @@ const ExtensionUtils = imports.misc.extensionUtils
 const Me = ExtensionUtils.getCurrentExtension();
 const Settings = Me.imports.settings;
 
-// TODO: Implement statistics per-interface not aggregate.
-// TODO: Implement speed (and usage?) graph on left-click.
-// TODO: Implement prefs menu to change settings.
-
 function NetSpeedExtension() {
     this._init();
 }
 
 NetSpeedExtension.prototype = {
     // Internal Functions
-    _createLabelStyle: function (colour) {
+    _createLabelStyle: function (labelName) {
+        const labelNames = ['down', 'up', 'total', 'usage']
+
         let styleText = '';
         if (colour) styleText += ('color:' + colour + ';');
-        if (this._labelFontFamily) styleText += ('font-family:' +
-                                                 this._labelFontFamily + ';');
+        if (this._labelFontFamily != "Shell Theme") styleText +=
+              ('font-family:' + this._labelFontFamily + ';');
+
         if (this._labelFontSize > 0) styleText += ('font-size:' +
                                                    this._labelFontSize + ';');
         if (this._labelWidthString) styleText += ('width:' +
@@ -61,7 +60,7 @@ NetSpeedExtension.prototype = {
 
         let text;
         if (speed == (speed | 0)) text = (speed.toString()); // If speed is int
-        else text = (speed.toFixed(this._measurementPrecision).toString());
+        else text = (speed.toFixed(this._decimalPlace).toString());
 
         return text + ["B", "K", "M", "G"][unit];
     },
@@ -98,26 +97,41 @@ NetSpeedExtension.prototype = {
     },
 
     _loadSettings: function() {
-        this._interfaces = this._settings.get_strv('monitor-interfaces');
-        this._updateInterval= this._settings.get_int('update-interval');
-        this._measurementPrecision =
-          this._settings.get_int('measurement-precision');
+        this._customFontFamily =
+            this._settings.get_string('custom-font-family');
+        this._customFontSize = this._settings.get_string('custom-font-size');
+        this._customSpeedDownColour =
+            this._settings.get_string('custom-speed-down-colour');
+        this._customSpeedDownDecoration =
+            this._settings.get_string('custom-speed-down-decoration');
+        this._customSpeedTotalColour =
+            this._settings.get_string('custom-speed-total-colour');
+        this._customSpeedTotalDecoration =
+            this._settings.get_string('custom-speed-total-decoration');
+        this._customSpeedUpColour =
+            this._settings.get_string('custom-speed-up-colour');
+        this._customSpeedUpDecoration =
+            this._settings.get_string('custom-speed-up-decoration');
+        this._customUsageTotalColour =
+            this._settings.get_string('custom-usage-total-colour');
+        this._customUsageTotalDecoration =
+            this._settings.get_string('custom-usage-total-decoration');
+        this._decimalPlace = this._settings.get_int('decimal-place');
         this._displayVertical = this._settings.get_boolean('display-vertical');
-
-        this._showDownLabel = this._settings.get_boolean('show-down-label');
-        this._showUpLabel = this._settings.get_boolean('show-up-label');
-        this._showTotalLabel = this._settings.get_boolean('show-total-label');
-        this._showUsageLabel =this._settings.get_boolean('show-usage-label');
-
-        this._downLabelEnding = this._settings.get_string('down-label-ending');
-        this._upLabelEnding = this._settings.get_string('up-label-ending');
-        this._totalLabelEnding =
-          this._settings.get_string('total-label-ending');
-        this._usageLabelEnding =
-          this._settings.get_string('usage-label-ending');
-
-        this._labelFontFamily = this._settings.get_string('label-font-family');
-        this._labelFontSize = this._settings.get_string('label-font-size');
+        this._interfaces = this._settings.get_strv('interfaces');
+        this._showSpeedDown = this._settings.get_boolean('show-speed-down');
+        this._showSpeedTotal = this._settings.get_boolean('show-speed-total');
+        this._showSpeedUp = this._settings.get_boolean('show-speed-up');
+        this._showUsageTotal =this._settings.get_boolean('show-usage-total');
+        this._updateInterval= this._settings.get_int('update-interval');
+        this._useCustomDecorations =
+            this._settings.get_boolean('use-custom-decorations');
+        this._useCustomFontColours =
+            this._settings.get_boolean('use-custom-font-colours');
+        this._useCustomFontFamily =
+            this._settings.get_boolean('use-custom-font-family');
+        this._useCustomFontSize =
+            this._settings.get_boolean('use-custom-font-size');
     },
 
     _update: function () {
@@ -138,19 +152,19 @@ NetSpeedExtension.prototype = {
                              transmitted - this._initialTransmitted;
 
         // No need to update text for hidden labels
-        if (this._showDownLabel) {
+        if (this._showSpeedDown) {
             this._downLabel.set_text(this._formatSpeed(this._speedDown) +
                                        this._downLabelEnding);
         }
-        if (this._showUpLabel) {
+        if (this._showSpeedUp) {
             this._upLabel.set_text(this._formatSpeed(this._speedUp) +
                                      this._upLabelEnding);
         }
-        if (this._showTotalLabel) {
+        if (this._showSpeedTotal) {
             this._totalLabel.set_text(this._formatSpeed(this._speedTotal) +
                                         this._totalLabelEnding);
         }
-        if (this._showUsageLabel){
+        if (this._showUsageTotal){
             this._usageLabel.set_text(this._formatSpeed(this._usageTotal) +
                                         this._usageLabelEnding);
         }
@@ -209,32 +223,30 @@ NetSpeedExtension.prototype = {
 
         this._isRunning = true;
 
+        // TODO: Update width to accomodate custom decoration
         // Try to find digit width of font:
         let tempLabel = new St.Label({style: this._createLabelStyle()});
         let labelContext = tempLabel.create_pango_context();
         let labelContextMetrics = labelContext.get_metrics(null, null);
         let digitWidthUnits = labelContextMetrics.get_approximate_digit_width();
         let digitWidth = digitWidthUnits / 1024;
-        let labelWidth = (6 + this._measurementPrecision) * digitWidth;
+        let speedWidth = 5;
+        let decorationWidth = 1;
+        if self._useCustomDecorations
+        let labelWidth = (6 + this._decimalPlace) * digitWidth;
         labelWidth += digitWidth / 2; // A bit of extra padding
         this._labelWidthString = labelWidth.toString() + "px";
         // More work than I would have liked, if only Gnome CSS had ch units :(
 
-        // Set up labels
-        let downLabelColour = this._settings.get_string('down-label-colour');
-        let upLabelColour = this._settings.get_string('up-label-colour');
-        let totalLabelColour = this._settings.get_string('total-label-colour');
-        let usageLabelColour = this._settings.get_string('usage-label-colour');
+        this._downLabel.set_style(this._createLabelStyle('down'));
+        this._upLabel.set_style(this._createLabelStyle('up'));
+        this._totalLabel.set_style(this._createLabelStyle('total'));
+        this._usageLabel.set_style(this._createLabelStyle('usage'));
 
-        this._downLabel.set_style(this._createLabelStyle(downLabelColour));
-        this._upLabel.set_style(this._createLabelStyle(upLabelColour));
-        this._totalLabel.set_style(this._createLabelStyle(totalLabelColour));
-        this._usageLabel.set_style(this._createLabelStyle(usageLabelColour));
-
-        if (this._showDownLabel) this._downLabel.show();
-        if (this._showUpLabel) this._upLabel.show();
-        if (this._showTotalLabel) this._totalLabel.show();
-        if (this._showUsageLabel) this._usageLabel.show();
+        if (this._showSpeedDown) this._downLabel.show();
+        if (this._showSpeedUp) this._upLabel.show();
+        if (this._showSpeedTotal) this._totalLabel.show();
+        if (this._showUsageTotal) this._usageLabel.show();
 
         this._labelBox.set_vertical(this._displayVertical);
 
@@ -250,7 +262,7 @@ NetSpeedExtension.prototype = {
 
         let lastBootTime = this._settings.get_int('last-boot-time');
         let thisBootTime = this._getBootTime();
-        if (lastBootTime > 0 & lastBootTime != thisBootTime) {
+        if (lastBootTime > 0 && lastBootTime != thisBootTime) {
             this._initialReceived = this._initialTransmitted = 0;
         } else {
             this._initialReceived =
