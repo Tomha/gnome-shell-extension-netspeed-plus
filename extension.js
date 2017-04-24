@@ -25,9 +25,15 @@ const St = imports.gi.St;
 const Lang = imports.lang;
 const Main = imports.ui.main;
 
-const ExtensionUtils = imports.misc.extensionUtils
+const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Settings = Me.imports.settings;
+
+// TODO: Seperate calclulation of font width from label width
+//          Should return consistently - return a value ot change in place
+// TODO: Order functions
+
+const showDebug = false;
 
 function NetSpeedExtension() {
     this._init();
@@ -105,7 +111,7 @@ NetSpeedExtension.prototype = {
     _loadSettings: function() {
         this._customFontFamily =
             this._settings.get_string('custom-font-family');
-        this._customFontSize = this._settings.get_string('custom-font-size');
+        this._customFontSize = this._settings.get_int('custom-font-size');
         this._customSpeedDownColour =
             this._settings.get_string('custom-speed-down-colour');
         this._customSpeedDownDecoration =
@@ -140,30 +146,61 @@ NetSpeedExtension.prototype = {
             this._settings.get_boolean('use-custom-font-size');
     },
 
-    _calcLabelWidth: function () {
-        // Find width in characters
-        let baseWidth = 4;
-        let decimalWidth = 0;
-        if (this._decimalPlace > 0) decimalWidth = this._decimalPlace + 1;
-        let decorationWidth = 1;
-        if (this._useCustomDecorations) {
-            let maxWidth = Math.max([this._customSpeedDownDecoration.length,
-                                     this._customSpeedUpDecoration.length,
-                                     this._customSpeedTotalDecoration.length,
-                                     this._customUsageTotalDecoration.length]);
-            if (maxWidth > decorationWidth) decorationWidth = maxWidth;
-        }
-        let totalWidth = baseWidth + decimalWidth + decorationWidth;
-
-        // Find width of a digit in pixels
+    _calcFontWidth: function () {
+        /*let pangoFont = new Pango.FontDescription();
+        pangoFont.set_style(this._createLabelStyle(null));
+        let pangoContext = new Pango.Context();
+        let pangoMetrics = pangoContext.get_metrics(pangoFont, null);
+        let digitWidthInUnits = pangoMetrics.get_approximate_digit_width();
+        this._fontWidth = digitWidthUnits / 1024;
+        pangoFont.free();
+        this._debugLabel.set_text(this._fontWidth.toString());
         let tempLabel = new St.Label({style: this._createLabelStyle(null)});
         let labelContext = tempLabel.create_pango_context();
-        let labelContextMetrics = labelContext.get_metrics(null, null);
-        let digitWidthUnits = labelContextMetrics.get_approximate_digit_width();
-        let digitWidthPixels = digitWidthUnits / 1024;
+        let labelFont = labelContext.get_font_description();
+        let labelMetrics = labelContext.get_metrics(labelFont, null);
+        let digitWidthUnits = labelMetrics.get_approximate_digit_width();*/
+        //let tempLabel = new St.Label({style: this._createLabelStyle(null)});
+        //let clutterText = tempLabel.get_clutter_text();
+        //let fontDescription = clutterText.get_font_description();
+        //let pangoContext = tempLabel.create_pango_context();
+        //let fontMetrics = pangoContext.get_metrics(fontDescription, null);
+        //let digitWidthInUnits = fontMetrics.get_approximate_digit_width();
+        //this._fontWidth = digitWidthInUnits / 1024;
+        //this._debugLabel.set_text(this._fontWidth.toString());
+        //pangoContext.unref();
+        //let tempLabel = new St.Label({style: this._createLabelStyle(null)});
+        //let labelContext = tempLabel.create_pango_context();
+        //let labelFont = labelContext.get_font_description();
+        //let labelMetrics = labelContext.get_metrics(labelFont, null);
+        //let digitWidthUnits = labelMetrics.get_approximate_digit_width();
+        this._fontWidth = 8;
+    },
 
-        // Set total digit width in pixels with half a digit's width in padding.
-        return (totalWidth + 0.5) * digitWidthPixels;
+    _calcLabelWidth: function () {
+        let baseChars = 4;
+        let decimalChars = 0;
+        if (this._decimalPlace > 0) decimalChars = this._decimalPlace + 1;
+        let decorationChars = 1;
+        if (this._useCustomDecorations) {
+            let maxWidth = Math.max(this._speedDownDecoration.length,
+                                    this._speedUpDecoration.length,
+                                    this._speedTotalDecoration.length,
+                                    this._usageTotalDecoration.length);
+            decorationChars = maxWidth;
+
+        }
+        let totalChars = baseChars + decimalChars + decorationChars;
+        this._calcFontWidth();
+        let totalWidth = (totalChars + 0.5) * this._fontWidth;
+        return totalWidth
+    },
+
+    _setAllLabelStyles: function () {
+        this._downLabel.set_style(this._createLabelStyle('down'));
+        this._upLabel.set_style(this._createLabelStyle('up'));
+        this._totalLabel.set_style(this._createLabelStyle('total'));
+        this._usageLabel.set_style(this._createLabelStyle('usage'));
     },
 
     _update: function () {
@@ -199,10 +236,184 @@ NetSpeedExtension.prototype = {
     // Event Handler Functions
 
     _onButtonClicked: function (button, event) {
-        if (event.get_button() == 3) {  // Right click button clears the couter
+        if (event.get_button() == 3) {  // Clear counter on right click
             this._initialReceived = this._totalReceived;
             this._initialTransmitted = this._totalTransmitted;
             this._usageLabel.set_text("0B" + this._usageTotalDecoration);
+        }
+    },
+
+    /*
+    What works as intended:
+    + Dispaly vertically
+    + Decimal Place
+    + All font colour related stuff
+    + Enabling/disabling labels
+    + Changing font family (width doesnt adjust though)
+    + Changing font size (width doesnt adjust though)
+
+    What doesnt work as intended:
+    - Labels dont change width when decoration changes
+    - Labels dont change width when font family changes
+    - Labels dont change width when font size changes
+    - Some wacky readings when disabling/enabling interfaces
+    - Update interval doesnt work
+        - Restarting isnt enough since isRunning flag unset and set within a
+            second, before _update can read it
+    */
+
+    _onSettingsChanged: function (settings, key) {
+        switch(key) {
+            case 'custom-font-family':
+                this._customFontFamily =
+                    this._settings.get_string('custom-font-family');
+                this._labelWidth = this._calcLabelWidth();
+                this._setAllLabelStyles();
+                break;
+            case 'custom-font-size':
+                this._customFontSize =
+                    this._settings.get_int('custom-font-size');
+                this._labelWidth = this._calcLabelWidth();
+                this._setAllLabelStyles();
+                break;
+            case 'custom-speed-down-colour':
+                this._customSpeedDownColour =
+                    this._settings.get_string('custom-speed-down-colour');
+                this._downLabel.set_style(this._createLabelStyle('down'));
+                break;
+            case 'custom-speed-down-decoration':
+                // TODO: Decorations update but labels dont change width
+                this._speedDownDecoration = this._useCustomDecorations ?
+                    this._settings.get_string('custom-speed-down-decoration') :
+                    '↓';
+                this._labelWidth = this._calcLabelWidth();
+                this._setAllLabelStyles();
+                break;
+            case 'custom-speed-total-colour':
+                this._customSpeedTotalColour =
+                    this._settings.get_string('custom-speed-total-colour');
+                this._totalLabel.set_style(this._createLabelStyle('total'));
+                break;
+            case 'custom-speed-total-decoration':
+                // TODO: Decorations update but labels dont change width
+                this._speedTotalDecoration = this._useCustomDecorations ?
+                    this._settings.get_string('custom-speed-total-decoration') :
+                    '⇵';
+                this._labelWidth = this._calcLabelWidth();
+                this._setAllLabelStyles();
+                break;
+            case 'custom-speed-up-colour':
+                this._customSpeedUpColour =
+                    this._settings.get_string('custom-speed-up-colour');
+                this._upLabel.set_style(this._createLabelStyle('up'));
+                break;
+            case 'custom-speed-up-decoration':
+                // TODO: Decorations update but labels dont change width
+                this._speedUpDecoration = this._useCustomDecorations ?
+                    this._settings.get_string('custom-speed-up-decoration') :
+                    '↑';
+                this._labelWidth = this._calcLabelWidth();
+                this._setAllLabelStyles();
+                break;
+            case 'custom-usage-total-colour':
+                this._customUsageTotalColour =
+                    this._settings.get_string('custom-usage-total-colour');
+                this._usageLabel.set_style(this._createLabelStyle('usage'));
+                break;
+            case 'custom-usage-total-decoration':
+                // TODO: Decorations update but labels dont change width
+                this._usageTotalDecoration = this._useCustomDecorations ?
+                    this._settings.get_string('custom-usage-total-decoration') :
+                    'Σ';
+                this._labelWidth = this._calcLabelWidth();
+                this._setAllLabelStyles();
+                break;
+            case 'decimal-place':
+                this._decimalPlace =
+                    this._settings.get_int('decimal-place');
+                this._labelWidth = this._calcLabelWidth();
+                break;
+            case 'display-vertical':
+                this._displayVertical =
+                    this._settings.get_boolean('display-vertical');
+                this._labelBox.set_vertical(this._displayVertical);
+                break;
+            case 'interfaces':
+                // TODO: Usage count goes hugely negative if disable main iface
+                //          Probably need per-interface tracking =/
+                // TODO: First tick has count for missed seconds, not just last
+                //          Always track all interfaces and keep stats?
+                this._interfaces = this._settings.get_strv('interfaces');
+                break;
+            case 'show-speed-down':
+                if (this._settings.get_boolean('show-speed-down'))
+                    this._downLabel.show()
+                else this._downLabel.hide();
+                break;
+            case 'show-speed-total':
+                if (this._settings.get_boolean('show-speed-total'))
+                    this._totalLabel.show()
+                else this._totalLabel.hide();
+                break;
+            case 'show-speed-up':
+                if (this._settings.get_boolean('show-speed-up'))
+                    this._upLabel.show()
+                else this._upLabel.hide();
+                break;
+            case 'show-usage-total':
+                if (this._settings.get_boolean('show-usage-total'))
+                    this._usageLabel.show()
+                else this._usageLabel.hide();
+                break;
+            case 'update-interval':
+                // TODO
+                break;
+            case 'use-custom-font-colours':
+                this._useCustomFontColours =
+                    this._settings.get_boolean('use-custom-font-colours');
+                this._setAllLabelStyles();
+                break;
+            case 'use-custom-decorations':
+                // TODO: Decorations update but labels dont change width
+                this._useCustomDecorations =
+                    this._settings.get_boolean('use-custom-decorations');
+                if (this._useCustomDecorations) {
+                    this._speedDownDecoration =
+                        this._settings.get_string(
+                            'custom-speed-down-decoration');
+
+                    this._speedUpDecoration =
+                        this._settings.get_string(
+                            'custom-speed-up-decoration');
+
+                    this._speedTotalDecoration =
+                        this._settings.get_string(
+                            'custom-speed-total-decoration');
+
+                    this._usageTotalDecoration =
+                        this._settings.get_string(
+                            'custom-usage-total-decoration');
+                } else {
+                    this._speedDownDecoration =  '↓';
+                    this._speedUpDecoration = '↑';
+                    this._speedTotalDecoration = '⇵';
+                    this._usageTotalDecoration = 'Σ';
+                }
+                this._labelWidth = this._calcLabelWidth();
+                this._setAllLabelStyles();
+                break;
+            case 'use-custom-font-family':
+                this._useCustomFontFamily =
+                    this._settings.get_boolean('use-custom-font-family');
+                this._labelWidth = this._calcLabelWidth();
+                this._setAllLabelStyles();
+                break;
+            case 'use-custom-font-size':
+                this._useCustomFontSize =
+                    this._settings.get_boolean('use-custom-font-size');
+                this._labelWidth = this._calcLabelWidth();
+                this._setAllLabelStyles();
+                break;
         }
     },
 
@@ -236,17 +447,23 @@ NetSpeedExtension.prototype = {
         this._labelBox.add_child(this._usageLabel);
         this._usageLabel.hide();
 
+        if (showDebug) {
+            this._debugLabel = new St.Label();
+            this._labelBox.add_child(this._debugLabel);
+            this._debugLabel.hide();
+        }
+
         this._button.connect('button-press-event',
                              Lang.bind(this, this._onButtonClicked));
     },
 
     enable: function () {
         this._settings = Settings.getSettings();
+        this._settings.connect('changed',
+                               Lang.bind(this, this._onSettingsChanged));
         this._loadSettings();
 
         this._isRunning = true;
-
-        this._labelWidth = this._calcLabelWidth();
 
         this._speedDownDecoration = this._useCustomDecorations ?
             this._customSpeedDownDecoration : '↓';
@@ -257,15 +474,17 @@ NetSpeedExtension.prototype = {
         this._usageTotalDecoration = this._useCustomDecorations ?
             this._customUsageTotalDecoration : 'Σ';
 
-        this._downLabel.set_style(this._createLabelStyle('down'));
-        this._upLabel.set_style(this._createLabelStyle('up'));
-        this._totalLabel.set_style(this._createLabelStyle('total'));
-        this._usageLabel.set_style(this._createLabelStyle('usage'));
+        this._labelWidth = this._calcLabelWidth();
+
+        this._setAllLabelStyles();
+        if (showDebug)
+            this._debugLabel.set_style(this._createLabelStyle('down'));
 
         if (this._showSpeedDown) this._downLabel.show();
         if (this._showSpeedUp) this._upLabel.show();
         if (this._showSpeedTotal) this._totalLabel.show();
         if (this._showUsageTotal) this._usageLabel.show();
+        if (showDebug) this._debugLabel.show();
 
         this._labelBox.set_vertical(this._displayVertical);
 
@@ -313,5 +532,6 @@ NetSpeedExtension.prototype = {
 };
 
 function init() {
-    return new NetSpeedExtension();
+    extension = new NetSpeedExtension();
+    return extension;
 }

@@ -27,6 +27,7 @@ const ExtensionUtils = imports.misc.extensionUtils
 const Me = ExtensionUtils.getCurrentExtension();
 const Settings = Me.imports.settings;
 
+
 function NetSpeedPrefs() {
     this._init();
 }
@@ -42,6 +43,25 @@ NetSpeedPrefs.prototype = {
         this._populateMonitoring();
         this._populateAppearance();
         this._populateAbout();
+
+        this._builder.connect_signals_full(
+            Lang.bind(this, this._signalConnector));
+    },
+
+    _getInterfaces: function () {
+        let interfaces = [];
+        try {
+            let fileContentsRaw = GLib.file_get_contents('/proc/net/dev');
+            let fileContents = fileContentsRaw[1].toString().split('\n');
+            // Skip the first 2 header lines:
+            for (let i = 2; i < fileContents.length; i++) {
+                let lineData = fileContents[i].trim().split(/\W+/);
+                let interfaceName = lineData[0];
+                if (interfaceName) interfaces.push(interfaceName);
+
+            }
+        } catch (e) { }
+        return interfaces;
     },
 
     _populateAbout: function () {
@@ -206,6 +226,9 @@ NetSpeedPrefs.prototype = {
                 displayInterfaces.push(currentInterfaces[i]);
             }
         }
+        displayInterfaces.sort();
+
+        this._interfaceCheckBoxes = []
 
         for (let i = 0; i < displayInterfaces.length; i++) {
             let checkbox = new Gtk.CheckButton();
@@ -213,27 +236,182 @@ NetSpeedPrefs.prototype = {
             if (savedInterfaces.indexOf(displayInterfaces[i]) >= 0) {
                 checkbox.set_active(true);
             }
+            checkbox.connect('toggled',
+                Lang.bind(this,
+                          this._signalHandler['interfaceSelectionChanged']));
+            this._interfaceCheckBoxes.push(checkbox);
             widget.insert(checkbox, -1);
         }
-
-        // TODO: Attach handler to toggled signals of interface checkboxes
     },
 
-    _getInterfaces: function () {
-        let interfaces = [];
-        try {
-            let fileContentsRaw = GLib.file_get_contents('/proc/net/dev');
-            let fileContents = fileContentsRaw[1].toString().split('\n');
-            // Skip the first 2 header lines:
-            for (let i = 2; i < fileContents.length; i++) {
-                let lineData = fileContents[i].trim().split(/\W+/);
-                let interfaceName = lineData[0];
-                if (interfaceName) interfaces.push(interfaceName);
+    _signalConnector: function (builder, object, signal, handler) {
+        object.connect(signal, Lang.bind(this, this._signalHandler[handler]));
+    },
 
+    _signalHandler: {
+        updateIntervalChanged: function (spinButton) {
+            let value = spinButton.get_value_as_int();
+            this._settings.set_int('update-interval', value);
+            this._settings.apply();
+        },
+
+        interfaceSelectionChanged: function (checkbox) {
+            let interfaceList = [];
+            for(let i = 0; i < this._interfaceCheckBoxes.length; i++) {
+                if (this._interfaceCheckBoxes[i].get_active())
+                    interfaceList.push(this._interfaceCheckBoxes[i].get_label());
             }
-        } catch (e) { }
-        return interfaces;
+            this._settings.set_strv('interfaces', interfaceList);
+            this._settings.apply();
+        },
+
+        displayVerticalChanged: function (switch_, state) {
+            this._settings.set_boolean('display-vertical', state);
+            this._settings.apply();
+        },
+
+        decimalPlaceChanged: function (spinButton) {
+            let value = spinButton.get_value_as_int();
+            this._settings.set_int('decimal-place', value);
+            this._settings.apply();
+        },
+
+        fontSizeChanged: function (spinButton) {
+            let value = spinButton.get_value_as_int();
+            this._settings.set_int('custom-font-size', value);
+            this._settings.apply();
+        },
+
+        fontFamilyChanged: function (comboBox) {
+            let model = comboBox.get_model();
+            let iter = comboBox.get_active_iter()[1]
+            let value = model.get_value(iter, 0);
+            this._settings.set_string('custom-font-family', value);
+            this._settings.apply();
+            this._builder.get_object('appearanceDebug').set_text(this._settings.get_string('custom-font-family'));
+        },
+
+        useCustomFontFamilyChanged: function (checkbox) {
+            let value = checkbox.get_active();
+            this._settings.set_boolean('use-custom-font-family', value);
+            this._settings.apply();
+        },
+
+        useCustomFontSizeChanged: function (checkbox) {
+            let value = checkbox.get_active();
+            this._settings.set_boolean('use-custom-font-size', value);
+            this._settings.apply();
+        },
+
+        useCustomFontColourChanged: function (checkbox) {
+            let value = checkbox.get_active();
+            this._settings.set_boolean('use-custom-font-colours', value);
+            this._settings.apply();
+        },
+
+        useCustomDecorationsChanged: function (checkbox) {
+            let value = checkbox.get_active();
+            this._settings.set_boolean('use-custom-decorations', value);
+            this._settings.apply();
+        },
+
+        speedDownEnableChanged: function (switch_, state) {
+            this._settings.set_boolean('show-speed-down', state);
+            this._settings.apply();
+        },
+
+        speedDownColourChanged: function (button) {
+            let colour = button.get_color();
+            let redHex = (parseInt(colour.red / 256)).toString(16);
+            if (redHex.length == 1) redHex = "0" + redHex;
+            let greenHex = (parseInt(colour.green / 256)).toString(16);
+            if (greenHex.length == 1) greenHex = "0" + greenHex;
+            let blueHex = (parseInt(colour.blue / 256)).toString(16);
+            if (blueHex.length == 1) blueHex = "0" + blueHex;
+            let totalHex = "#" + redHex + greenHex + blueHex;
+            this._settings.set_string('custom-speed-down-colour', totalHex);
+            this._settings.apply();
+        },
+
+        speedDownDecorationChanged: function (entry) {
+            let value = entry.get_text();
+            this._settings.set_string('custom-speed-down-decoration', value);
+            this._settings.apply();
+        },
+
+        speedUpEnableChanged: function (switch_, state) {
+            this._settings.set_boolean('show-speed-up', state);
+            this._settings.apply();
+        },
+
+        speedUpColourChanged: function (button) {
+            let colour = button.get_color();
+            let redHex = (parseInt(colour.red / 256)).toString(16);
+            if (redHex.length == 1) redHex = "0" + redHex;
+            let greenHex = (parseInt(colour.green / 256)).toString(16);
+            if (greenHex.length == 1) greenHex = "0" + greenHex;
+            let blueHex = (parseInt(colour.blue / 256)).toString(16);
+            if (blueHex.length == 1) blueHex = "0" + blueHex;
+            let totalHex = "#" + redHex + greenHex + blueHex;
+            this._settings.set_string('custom-speed-up-colour', totalHex);
+            this._settings.apply();
+        },
+
+        speedUpDecorationChanged: function (entry) {
+            let value = entry.get_text();
+            this._settings.set_string('custom-speed-up-decoration', value);
+            this._settings.apply();
+        },
+
+        speedTotalEnableChanged: function (switch_, state) {
+            this._settings.set_boolean('show-speed-total', state);
+            this._settings.apply();
+        },
+
+        speedTotalColourChanged: function (button) {
+            let colour = button.get_color();
+            let redHex = (parseInt(colour.red / 256)).toString(16);
+            if (redHex.length == 1) redHex = "0" + redHex;
+            let greenHex = (parseInt(colour.green / 256)).toString(16);
+            if (greenHex.length == 1) greenHex = "0" + greenHex;
+            let blueHex = (parseInt(colour.blue / 256)).toString(16);
+            if (blueHex.length == 1) blueHex = "0" + blueHex;
+            let totalHex = "#" + redHex + greenHex + blueHex;
+            this._settings.set_string('custom-speed-total-colour', totalHex);
+            this._settings.apply();
+        },
+
+        speedTotalDecorationChanged: function (entry) {
+            let value = entry.get_text();
+            this._settings.set_string('custom-speed-total-decoration', value);
+            this._settings.apply();
+        },
+
+        usageTotalEnableChanged: function (switch_, state) {
+            this._settings.set_boolean('show-usage-total', state);
+            this._settings.apply();
+        },
+
+        usageTotalColourChanged: function (button) {
+            let colour = button.get_color();
+            let redHex = (parseInt(colour.red / 256)).toString(16);
+            if (redHex.length == 1) redHex = "0" + redHex;
+            let greenHex = (parseInt(colour.green / 256)).toString(16);
+            if (greenHex.length == 1) greenHex = "0" + greenHex;
+            let blueHex = (parseInt(colour.blue / 256)).toString(16);
+            if (blueHex.length == 1) blueHex = "0" + blueHex;
+            let totalHex = "#" + redHex + greenHex + blueHex;
+            this._settings.set_string('custom-usage-total-colour', totalHex);
+            this._settings.apply();
+        },
+
+        usageTotalDecorationChanged: function (entry) {
+            let value = entry.get_text();
+            this._settings.set_string('custom-usage-total-decoration', value);
+            this._settings.apply();
+        }
     }
+
 };
 
 function buildPrefsWidget () {

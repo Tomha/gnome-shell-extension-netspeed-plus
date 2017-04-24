@@ -36,8 +36,9 @@
           <object class="GtkFrame">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="margin_top">8</property>
             <property name="label_xalign">0</property>
-            <property name="shadow_type">none</property>
+            <property name="shadow_type">in</property>
             <child>
               <object class="GtkFlowBox" id="interfaceFlowBox">
                 <property name="visible">True</property>
@@ -62,46 +63,68 @@
           <packing>
             <property name="left_attach">0</property>
             <property name="top_attach">1</property>
-            <property name="width">2</property>
           </packing>
         </child>
         <child>
-          <object class="GtkLabel">
+          <object class="GtkFrame">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="tooltip_text" translatable="yes">How many seconds between refreshing network statistics.</property>
-            <property name="halign">end</property>
-            <property name="label" translatable="yes">Update Interval:</property>
-            <attributes>
-              <attribute name="weight" value="bold"/>
-            </attributes>
+            <property name="label_xalign">0</property>
+            <property name="shadow_type">in</property>
+            <child>
+              <object class="GtkGrid">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="margin_left">8</property>
+                <property name="margin_right">8</property>
+                <property name="margin_top">8</property>
+                <property name="margin_bottom">8</property>
+                <property name="column_spacing">8</property>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="tooltip_text" translatable="yes">How many seconds between refreshing network statistics.</property>
+                    <property name="halign">end</property>
+                    <property name="label" translatable="yes">Update Interval:</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkSpinButton" id="updateInterval">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="halign">start</property>
+                    <property name="adjustment">updateIntervalAdjustment</property>
+                    <signal name="value-changed" handler="updateIntervalChanged" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+              </object>
+            </child>
+            <child type="label">
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">General Settings:</property>
+                <attributes>
+                  <attribute name="weight" value="bold"/>
+                </attributes>
+              </object>
+            </child>
           </object>
           <packing>
             <property name="left_attach">0</property>
             <property name="top_attach">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkSpinButton" id="updateInterval">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="halign">start</property>
-            <property name="adjustment">updateIntervalAdjustment</property>
-          </object>
-          <packing>
-            <property name="left_attach">1</property>
-            <property name="top_attach">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkLabel" id="debugLabel">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-          </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">2</property>
-            <property name="width">2</property>
           </packing>
         </child>
       </object>
@@ -163,6 +186,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="halign">start</property>
+                    <signal name="state-set" handler="displayVerticalChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -188,6 +212,7 @@
                     <property name="can_focus">True</property>
                     <property name="halign">start</property>
                     <property name="adjustment">decimalPlaceAdjustment</property>
+                    <signal name="value-changed" handler="decimalPlaceChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">3</property>
@@ -203,19 +228,7 @@
                     <property name="label" translatable="yes">Custom Font Size:</property>
                   </object>
                   <packing>
-                    <property name="left_attach">0</property>
-                    <property name="top_attach">1</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkSpinButton" id="fontSize">
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="halign">start</property>
-                    <property name="adjustment">fontSizeAdjustment</property>
-                  </object>
-                  <packing>
-                    <property name="left_attach">1</property>
+                    <property name="left_attach">2</property>
                     <property name="top_attach">1</property>
                   </packing>
                 </child>
@@ -228,7 +241,20 @@
                     <property name="label" translatable="yes">Custom Font Family:</property>
                   </object>
                   <packing>
-                    <property name="left_attach">2</property>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkSpinButton" id="fontSize">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="halign">start</property>
+                    <property name="adjustment">fontSizeAdjustment</property>
+                    <signal name="value-changed" handler="fontSizeChanged" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">3</property>
                     <property name="top_attach">1</property>
                   </packing>
                 </child>
@@ -245,9 +271,10 @@
                       <item translatable="yes">cursive</item>
                       <item translatable="yes">fantasy</item>
                     </items>
+                    <signal name="changed" handler="fontFamilyChanged" swapped="no"/>
                   </object>
                   <packing>
-                    <property name="left_attach">3</property>
+                    <property name="left_attach">1</property>
                     <property name="top_attach">1</property>
                   </packing>
                 </child>
@@ -295,6 +322,7 @@
                     <property name="receives_default">False</property>
                     <property name="tooltip_text" translatable="yes">Whether to use the custom font family for displaying statistics.</property>
                     <property name="draw_indicator">True</property>
+                    <signal name="toggled" handler="useCustomFontFamilyChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
@@ -309,6 +337,7 @@
                     <property name="receives_default">False</property>
                     <property name="tooltip_text" translatable="yes">Whether to use the custom font size for displaying statistics.</property>
                     <property name="draw_indicator">True</property>
+                    <signal name="toggled" handler="useCustomFontSizeChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -323,6 +352,7 @@
                     <property name="receives_default">False</property>
                     <property name="tooltip_text" translatable="yes">Whether to use custom font colours for displaying statistics.</property>
                     <property name="draw_indicator">True</property>
+                    <signal name="toggled" handler="useCustomFontColourChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">2</property>
@@ -337,6 +367,7 @@
                     <property name="receives_default">False</property>
                     <property name="tooltip_text" translatable="yes">Whether to use custom text at the end of statistics.</property>
                     <property name="draw_indicator">True</property>
+                    <signal name="toggled" handler="useCustomDecorationsChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">3</property>
@@ -421,6 +452,7 @@
                   <object class="GtkSwitch" id="speedDownEnable">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <signal name="state-set" handler="speedDownEnableChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -433,6 +465,7 @@
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="halign">start</property>
+                    <signal name="color-set" handler="speedDownColourChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -444,7 +477,9 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="halign">start</property>
+                    <property name="max_length">5</property>
                     <property name="width_chars">5</property>
+                    <signal name="changed" handler="speedDownDecorationChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -528,6 +563,7 @@
                   <object class="GtkSwitch" id="speedUpEnable">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <signal name="state-set" handler="speedUpEnableChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -540,6 +576,7 @@
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="halign">start</property>
+                    <signal name="color-set" handler="speedUpColourChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -551,7 +588,9 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="halign">start</property>
+                    <property name="max_length">5</property>
                     <property name="width_chars">5</property>
+                    <signal name="changed" handler="speedUpDecorationChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -635,6 +674,7 @@
                   <object class="GtkSwitch" id="usageTotalEnable">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <signal name="state-set" handler="usageTotalEnableChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -647,6 +687,7 @@
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="halign">start</property>
+                    <signal name="color-set" handler="usageTotalColourChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -658,7 +699,9 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="halign">start</property>
+                    <property name="max_length">5</property>
                     <property name="width_chars">5</property>
+                    <signal name="changed" handler="usageTotalDecorationChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -742,6 +785,7 @@
                   <object class="GtkSwitch" id="speedTotalEnable">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <signal name="state-set" handler="speedTotalEnableChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -754,6 +798,7 @@
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="halign">start</property>
+                    <signal name="color-set" handler="speedTotalColourChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -765,7 +810,9 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="halign">start</property>
+                    <property name="max_length">5</property>
                     <property name="width_chars">5</property>
+                    <signal name="changed" handler="speedTotalDecorationChanged" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
@@ -788,6 +835,17 @@
           <packing>
             <property name="left_attach">2</property>
             <property name="top_attach">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="appearanceDebug">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">3</property>
+            <property name="width">4</property>
           </packing>
         </child>
       </object>
