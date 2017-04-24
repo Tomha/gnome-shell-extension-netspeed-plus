@@ -19,6 +19,7 @@ https://github.com/Tomha/gnome-shell-extension-netspeed */
 
 const GLib = imports.gi.GLib;
 const Gio = imports.gi.Gio;
+const Gtk = imports.gi.Gtk;
 const Pango = imports.gi.Pango;
 const St = imports.gi.St;
 
@@ -33,7 +34,7 @@ const Settings = Me.imports.settings;
 //          Should return consistently - return a value ot change in place
 // TODO: Order functions
 
-const showDebug = false;
+const showDebug = true;
 
 function NetSpeedExtension() {
     this._init();
@@ -174,6 +175,11 @@ NetSpeedExtension.prototype = {
         //let labelFont = labelContext.get_font_description();
         //let labelMetrics = labelContext.get_metrics(labelFont, null);
         //let digitWidthUnits = labelMetrics.get_approximate_digit_width();
+        //let testLabel = new Gtk.Label("0");
+        //testLabel.realize();
+
+        // TODO
+
         this._fontWidth = 8;
     },
 
@@ -192,8 +198,7 @@ NetSpeedExtension.prototype = {
         }
         let totalChars = baseChars + decimalChars + decorationChars;
         this._calcFontWidth();
-        let totalWidth = (totalChars + 0.5) * this._fontWidth;
-        return totalWidth
+        return (totalChars + 0.5) * this._fontWidth;
     },
 
     _setAllLabelStyles: function () {
@@ -230,7 +235,12 @@ NetSpeedExtension.prototype = {
         if (this._showUsageTotal) this._usageLabel.set_text(
             this._formatSpeed(this._usageTotal) + this._usageTotalDecoration);
 
-        return this._isRunning; // Return false if not meant to update again
+        if (this._runNum > this._currentRunNum){
+            this._currentRunNum = this._runNum
+            Main.Mainloop.timeout_add_seconds(this._updateInterval,
+                                  Lang.bind(this, this._update));
+            return false;
+        } else return this._isRunning;
     },
 
     // Event Handler Functions
@@ -245,6 +255,7 @@ NetSpeedExtension.prototype = {
 
     /*
     What works as intended:
+    + Update interval seems to update correctly
     + Dispaly vertically
     + Decimal Place
     + All font colour related stuff
@@ -257,9 +268,6 @@ NetSpeedExtension.prototype = {
     - Labels dont change width when font family changes
     - Labels dont change width when font size changes
     - Some wacky readings when disabling/enabling interfaces
-    - Update interval doesnt work
-        - Restarting isnt enough since isRunning flag unset and set within a
-            second, before _update can read it
     */
 
     _onSettingsChanged: function (settings, key) {
@@ -366,7 +374,9 @@ NetSpeedExtension.prototype = {
                 else this._usageLabel.hide();
                 break;
             case 'update-interval':
-                // TODO
+                this._updateInterval =
+                    this._settings.get_int('update-interval');
+                this._runNum++;
                 break;
             case 'use-custom-font-colours':
                 this._useCustomFontColours =
@@ -421,6 +431,8 @@ NetSpeedExtension.prototype = {
 
     _init: function () {
         this._isRunning = false;
+        this._runNum = 0;
+        this._currentRunNum = 0;
 
         this._labelBox = new St.BoxLayout();
         this._button = new St.Bin({style_class: 'panel-button',
@@ -464,6 +476,8 @@ NetSpeedExtension.prototype = {
         this._loadSettings();
 
         this._isRunning = true;
+        this._runNum = 1;
+        this._currentRunNum = 0;
 
         this._speedDownDecoration = this._useCustomDecorations ?
             this._customSpeedDownDecoration : '↓';
@@ -510,10 +524,8 @@ NetSpeedExtension.prototype = {
         }
 
         // Begin
-
         Main.panel._rightBox.insert_child_at_index(this._button, 0);
-        Main.Mainloop.timeout_add_seconds(this._updateInterval,
-                                          Lang.bind(this, this._update));
+        this._update();
     },
 
     disable: function () {
