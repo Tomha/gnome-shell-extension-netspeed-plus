@@ -471,8 +471,12 @@ NetSpeedExtension.prototype = {
 
         let lastBootTime = this._settings.get_int('last-boot-time');
         let thisBootTime = this._getBootTime();
-        if (lastBootTime > 0 && lastBootTime != thisBootTime) {
+        if (lastBootTime != thisBootTime) {
             this._initialReceived = this._initialTransmitted = 0;
+            this._settings.set_double('initial-receive-count', 0);
+            this._settings.set_double('initial-transmit-count', 0);
+            this._settings.set_double('last-boot-time', this._getBootTime());
+            this._settings.apply();
         } else {
             this._initialReceived =
               this._settings.get_double('initial-receive-count');
@@ -487,15 +491,6 @@ NetSpeedExtension.prototype = {
 
     disable: function () {
         this._isRunning = false
-
-        this._settings.set_double('initial-receive-count',
-                                  this._initialReceived);
-        this._settings.set_double('initial-transmit-count',
-                                  this._initialTransmitted);
-        this._settings.set_double('last-boot-time',
-                                  this._getBootTime());
-        this._settings.apply();
-
         Main.panel._rightBox.remove_child(this._button);
     }
 };
