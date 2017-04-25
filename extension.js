@@ -30,11 +30,10 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Settings = Me.imports.settings;
 
-// TODO: Seperate calclulation of font width from label width
-//          Should return consistently - return a value ot change in place
 // TODO: Order functions
+// TOOD: Is debug broken?
 
-const showDebug = true;
+const showDebug = false;
 
 function NetSpeedExtension() {
     this._init();
@@ -60,7 +59,10 @@ NetSpeedExtension.prototype = {
             ('font-family:' + this._customFontFamily + ';');
         if (this._useCustomFontSize > 0) styleText +=
             ('font-size:' + this._customFontSize + 'pt;');
-        styleText += ('width:' + this._labelWidth + 'px;');
+        if (this._useFixedWidth) {
+            styleText += this._widthIsMinimum ? 'min-width:' : 'width:';
+            styleText += this._customFixedWidth + 'px;'
+        }
         styleText += 'text-align:right;';
         return styleText;
     },
@@ -110,6 +112,8 @@ NetSpeedExtension.prototype = {
     },
 
     _loadSettings: function() {
+        this._customFixedWidth =
+            this._settings.get_int('custom-fixed-width');
         this._customFontFamily =
             this._settings.get_string('custom-font-family');
         this._customFontSize = this._settings.get_int('custom-font-size');
@@ -145,60 +149,10 @@ NetSpeedExtension.prototype = {
             this._settings.get_boolean('use-custom-font-family');
         this._useCustomFontSize =
             this._settings.get_boolean('use-custom-font-size');
-    },
-
-    _calcFontWidth: function () {
-        /*let pangoFont = new Pango.FontDescription();
-        pangoFont.set_style(this._createLabelStyle(null));
-        let pangoContext = new Pango.Context();
-        let pangoMetrics = pangoContext.get_metrics(pangoFont, null);
-        let digitWidthInUnits = pangoMetrics.get_approximate_digit_width();
-        this._fontWidth = digitWidthUnits / 1024;
-        pangoFont.free();
-        this._debugLabel.set_text(this._fontWidth.toString());
-        let tempLabel = new St.Label({style: this._createLabelStyle(null)});
-        let labelContext = tempLabel.create_pango_context();
-        let labelFont = labelContext.get_font_description();
-        let labelMetrics = labelContext.get_metrics(labelFont, null);
-        let digitWidthUnits = labelMetrics.get_approximate_digit_width();*/
-        //let tempLabel = new St.Label({style: this._createLabelStyle(null)});
-        //let clutterText = tempLabel.get_clutter_text();
-        //let fontDescription = clutterText.get_font_description();
-        //let pangoContext = tempLabel.create_pango_context();
-        //let fontMetrics = pangoContext.get_metrics(fontDescription, null);
-        //let digitWidthInUnits = fontMetrics.get_approximate_digit_width();
-        //this._fontWidth = digitWidthInUnits / 1024;
-        //this._debugLabel.set_text(this._fontWidth.toString());
-        //pangoContext.unref();
-        //let tempLabel = new St.Label({style: this._createLabelStyle(null)});
-        //let labelContext = tempLabel.create_pango_context();
-        //let labelFont = labelContext.get_font_description();
-        //let labelMetrics = labelContext.get_metrics(labelFont, null);
-        //let digitWidthUnits = labelMetrics.get_approximate_digit_width();
-        //let testLabel = new Gtk.Label("0");
-        //testLabel.realize();
-
-        // TODO
-
-        this._fontWidth = 8;
-    },
-
-    _calcLabelWidth: function () {
-        let baseChars = 4;
-        let decimalChars = 0;
-        if (this._decimalPlace > 0) decimalChars = this._decimalPlace + 1;
-        let decorationChars = 1;
-        if (this._useCustomDecorations) {
-            let maxWidth = Math.max(this._speedDownDecoration.length,
-                                    this._speedUpDecoration.length,
-                                    this._speedTotalDecoration.length,
-                                    this._usageTotalDecoration.length);
-            decorationChars = maxWidth;
-
-        }
-        let totalChars = baseChars + decimalChars + decorationChars;
-        this._calcFontWidth();
-        return (totalChars + 0.5) * this._fontWidth;
+        this._useFixedWidth =
+            this._settings.get_boolean('use-fixed-width');
+        this._widthIsMinimum =
+            this._settings.get_boolean('width-is-minimum');
     },
 
     _setAllLabelStyles: function () {
@@ -272,16 +226,19 @@ NetSpeedExtension.prototype = {
 
     _onSettingsChanged: function (settings, key) {
         switch(key) {
+            case 'custom-fixed-width':
+                this._customFixedWidth =
+                    this._settings.get_int('custom-fixed-width');
+                this._setAllLabelStyles();
+                break;
             case 'custom-font-family':
                 this._customFontFamily =
                     this._settings.get_string('custom-font-family');
-                this._labelWidth = this._calcLabelWidth();
                 this._setAllLabelStyles();
                 break;
             case 'custom-font-size':
                 this._customFontSize =
                     this._settings.get_int('custom-font-size');
-                this._labelWidth = this._calcLabelWidth();
                 this._setAllLabelStyles();
                 break;
             case 'custom-speed-down-colour':
@@ -294,7 +251,6 @@ NetSpeedExtension.prototype = {
                 this._speedDownDecoration = this._useCustomDecorations ?
                     this._settings.get_string('custom-speed-down-decoration') :
                     '↓';
-                this._labelWidth = this._calcLabelWidth();
                 this._setAllLabelStyles();
                 break;
             case 'custom-speed-total-colour':
@@ -307,7 +263,6 @@ NetSpeedExtension.prototype = {
                 this._speedTotalDecoration = this._useCustomDecorations ?
                     this._settings.get_string('custom-speed-total-decoration') :
                     '⇵';
-                this._labelWidth = this._calcLabelWidth();
                 this._setAllLabelStyles();
                 break;
             case 'custom-speed-up-colour':
@@ -320,7 +275,6 @@ NetSpeedExtension.prototype = {
                 this._speedUpDecoration = this._useCustomDecorations ?
                     this._settings.get_string('custom-speed-up-decoration') :
                     '↑';
-                this._labelWidth = this._calcLabelWidth();
                 this._setAllLabelStyles();
                 break;
             case 'custom-usage-total-colour':
@@ -333,13 +287,11 @@ NetSpeedExtension.prototype = {
                 this._usageTotalDecoration = this._useCustomDecorations ?
                     this._settings.get_string('custom-usage-total-decoration') :
                     'Σ';
-                this._labelWidth = this._calcLabelWidth();
                 this._setAllLabelStyles();
                 break;
             case 'decimal-place':
                 this._decimalPlace =
                     this._settings.get_int('decimal-place');
-                this._labelWidth = this._calcLabelWidth();
                 break;
             case 'display-vertical':
                 this._displayVertical =
@@ -409,19 +361,26 @@ NetSpeedExtension.prototype = {
                     this._speedTotalDecoration = '⇵';
                     this._usageTotalDecoration = 'Σ';
                 }
-                this._labelWidth = this._calcLabelWidth();
                 this._setAllLabelStyles();
                 break;
             case 'use-custom-font-family':
                 this._useCustomFontFamily =
                     this._settings.get_boolean('use-custom-font-family');
-                this._labelWidth = this._calcLabelWidth();
                 this._setAllLabelStyles();
                 break;
             case 'use-custom-font-size':
                 this._useCustomFontSize =
                     this._settings.get_boolean('use-custom-font-size');
-                this._labelWidth = this._calcLabelWidth();
+                this._setAllLabelStyles();
+                break;
+            case 'use-fixed-width':
+                this._useFixedWidth =
+                    this._settings.get_boolean('use-fixed-width');
+                this._setAllLabelStyles();
+                break;
+            case 'width-is-minimum':
+                this._widthIsMinimum =
+                    this._settings.get_boolean('width-is-minimum');
                 this._setAllLabelStyles();
                 break;
         }
@@ -487,8 +446,6 @@ NetSpeedExtension.prototype = {
             this._customSpeedTotalDecoration : '⇵';
         this._usageTotalDecoration = this._useCustomDecorations ?
             this._customUsageTotalDecoration : 'Σ';
-
-        this._labelWidth = this._calcLabelWidth();
 
         this._setAllLabelStyles();
         if (showDebug)

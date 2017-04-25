@@ -34,6 +34,21 @@
             <summary>Custom font size for display of statistics.</summary>
             <description>Font size in pt to display statistics in, instead of the default for your shell theme.</description>
         </key>
+	<key name="use-fixed-width" type="b">
+            <default>false</default>
+            <summary>Whether statistics should be displayed with fixed width.</summary>
+            <description>Whether statistics should be displayed with fixed width, as opposed to only taking as much room as the current value.</description>
+        </key>
+	<key name="width-is-minimum" type="b">
+            <default>false</default>
+            <summary>Whether the custom fixed width should be used as a minimum width.</summary>
+            <description>Whether the custom fixed width should be used as a minimum width, still allowing the space alloted to expand if a longer value is displayed.</description>
+        </key>
+	<key name="custom-fixed-width" type="i">
+            <default>48</default>
+            <summary>Width to assign to each statistic.</summary>
+            <description>Width to assign to each statistic. Statistics will be right-aligned within alloted space.</description>
+        </key>
 	<key name="use-custom-font-family" type="b">
             <default>false</default>
             <summary>Whether to use a custom font family.</summary>

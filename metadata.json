@@ -3,7 +3,7 @@
 	"licence": "GNU General Public License v3.0",
 	"name": "NetSpeed",
 	"settings-schema": "org.gnome.shell.extensions.netspeed",
-	"shell-version": ["3.22.3"],
+	"shell-version": ["3.22", "3.24"],
 	"url": "https://github.com/Tomha/gnome-shell-extension-netspeed",
 	"uuid": "netspeed@tomha.github.com",
 	"version": 1.1

@@ -112,6 +112,21 @@ NetSpeedPrefs.prototype = {
         let valueIndex = fontFamilyOptions.indexOf(value);
         if ( valueIndex >= 0) widget.set_active(valueIndex);
 
+        // Fixed Width
+        widget = this._builder.get_object('fixedWidth');
+        value = this._settings.get_boolean('use-fixed-width');
+        widget.set_active(value);
+
+        // Width Is Minimum
+        widget = this._builder.get_object('widthIsMinimum');
+        value = this._settings.get_boolean('width-is-minimum');
+        widget.set_active(value);
+
+        // Custom Width
+        widget = this._builder.get_object('customWidth');
+        value = this._settings.get_int('custom-fixed-width');
+        widget.set_value(value);
+
         // Use Custom Font Family
         widget = this._builder.get_object('customFamily');
         value = this._settings.get_boolean('use-custom-font-family');
@@ -289,6 +304,22 @@ NetSpeedPrefs.prototype = {
             this._settings.set_string('custom-font-family', value);
             this._settings.apply();
             this._builder.get_object('appearanceDebug').set_text(this._settings.get_string('custom-font-family'));
+        },
+
+        fixedWidthChanged: function (switch_, state) {
+            this._settings.set_boolean('use-fixed-width', state);
+            this._settings.apply();
+        },
+
+        widthIsMinimumChanged: function (switch_, state) {
+            this._settings.set_boolean('width-is-minimum', state);
+            this._settings.apply();
+        },
+
+        customWidthChanged: function (scale) {
+            let value = scale.get_value();
+            this._settings.set_int('custom-fixed-width', value)
+            this._settings.apply();
         },
 
         useCustomFontFamilyChanged: function (checkbox) {
