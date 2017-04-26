@@ -160,6 +160,8 @@ NetSpeedExtension.prototype = {
         this._upLabel.set_style(this._createLabelStyle('up'));
         this._totalLabel.set_style(this._createLabelStyle('total'));
         this._usageLabel.set_style(this._createLabelStyle('usage'));
+        if (showDebug)
+            this._debugLabel.set_style(this._createLabelStyle(null));
     },
 
     _update: function () {
@@ -214,13 +216,10 @@ NetSpeedExtension.prototype = {
     + Decimal Place
     + All font colour related stuff
     + Enabling/disabling labels
-    + Changing font family (width doesnt adjust though)
-    + Changing font size (width doesnt adjust though)
+    + Changing font family
+    + Changing font size
 
     What doesnt work as intended:
-    - Labels dont change width when decoration changes
-    - Labels dont change width when font family changes
-    - Labels dont change width when font size changes
     - Some wacky readings when disabling/enabling interfaces
     */
 
@@ -247,7 +246,6 @@ NetSpeedExtension.prototype = {
                 this._downLabel.set_style(this._createLabelStyle('down'));
                 break;
             case 'custom-speed-down-decoration':
-                // TODO: Decorations update but labels dont change width
                 this._speedDownDecoration = this._useCustomDecorations ?
                     this._settings.get_string('custom-speed-down-decoration') :
                     '↓';
@@ -259,7 +257,6 @@ NetSpeedExtension.prototype = {
                 this._totalLabel.set_style(this._createLabelStyle('total'));
                 break;
             case 'custom-speed-total-decoration':
-                // TODO: Decorations update but labels dont change width
                 this._speedTotalDecoration = this._useCustomDecorations ?
                     this._settings.get_string('custom-speed-total-decoration') :
                     '⇵';
@@ -271,7 +268,6 @@ NetSpeedExtension.prototype = {
                 this._upLabel.set_style(this._createLabelStyle('up'));
                 break;
             case 'custom-speed-up-decoration':
-                // TODO: Decorations update but labels dont change width
                 this._speedUpDecoration = this._useCustomDecorations ?
                     this._settings.get_string('custom-speed-up-decoration') :
                     '↑';
@@ -283,7 +279,6 @@ NetSpeedExtension.prototype = {
                 this._usageLabel.set_style(this._createLabelStyle('usage'));
                 break;
             case 'custom-usage-total-decoration':
-                // TODO: Decorations update but labels dont change width
                 this._usageTotalDecoration = this._useCustomDecorations ?
                     this._settings.get_string('custom-usage-total-decoration') :
                     'Σ';
@@ -455,7 +450,11 @@ NetSpeedExtension.prototype = {
         if (this._showSpeedUp) this._upLabel.show();
         if (this._showSpeedTotal) this._totalLabel.show();
         if (this._showUsageTotal) this._usageLabel.show();
-        if (showDebug) this._debugLabel.show();
+
+        if (showDebug) {
+            this._debugLabel.set_text("DEBUG");
+            this._debugLabel.show();
+        }
 
         this._labelBox.set_vertical(this._displayVertical);
 
