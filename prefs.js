@@ -226,8 +226,6 @@ NetSpeedPrefs.prototype = {
         let widget = null;
         let value = null;
 
-        let debug = this._builder.get_object('debugLabel');
-
         widget = this._builder.get_object('updateInterval');
         value = this._settings.get_int('update-interval');
         widget.set_value(value)
@@ -274,7 +272,8 @@ NetSpeedPrefs.prototype = {
             let interfaceList = [];
             for(let i = 0; i < this._interfaceCheckBoxes.length; i++) {
                 if (this._interfaceCheckBoxes[i].get_active())
-                    interfaceList.push(this._interfaceCheckBoxes[i].get_label());
+                    interfaceList.push(
+                        this._interfaceCheckBoxes[i].get_label());
             }
             this._settings.set_strv('interfaces', interfaceList);
             this._settings.apply();
@@ -303,7 +302,6 @@ NetSpeedPrefs.prototype = {
             let value = model.get_value(iter, 0);
             this._settings.set_string('custom-font-family', value);
             this._settings.apply();
-            this._builder.get_object('appearanceDebug').set_text(this._settings.get_string('custom-font-family'));
         },
 
         fixedWidthChanged: function (switch_, state) {
@@ -442,7 +440,6 @@ NetSpeedPrefs.prototype = {
             this._settings.apply();
         }
     }
-
 };
 
 function buildPrefsWidget () {
@@ -451,6 +448,5 @@ function buildPrefsWidget () {
     return prefs.widget;
 }
 
-function init (){
+function init (){ }
 
-}

@@ -30,9 +30,6 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Settings = Me.imports.settings;
 
-// TODO: Order functions
-// TOOD: Is debug broken?
-
 const showDebug = false;
 
 function NetSpeedExtension() {
@@ -73,7 +70,6 @@ NetSpeedExtension.prototype = {
             speed /= 1000;
             unit += 1;
         }
-
         let text;
         if (speed == (speed | 0)) text = (speed.toString()); // If speed is int
         else text = (speed.toFixed(this._decimalPlace).toString());
@@ -107,7 +103,7 @@ NetSpeedExtension.prototype = {
             return [received, transmitted];
         } catch (e) {
             // Will cause 0 increase in stats over this interval
-            return[this._totalReceived, this._totalTransmitted];
+            return [this._totalReceived, this._totalTransmitted];
         }
     },
 
@@ -200,7 +196,6 @@ NetSpeedExtension.prototype = {
     },
 
     // Event Handler Functions
-
     _onButtonClicked: function (button, event) {
         if (event.get_button() == 3) {  // Clear counter on right click
             this._initialReceived = this._totalReceived;
@@ -208,20 +203,6 @@ NetSpeedExtension.prototype = {
             this._usageLabel.set_text("0B" + this._usageTotalDecoration);
         }
     },
-
-    /*
-    What works as intended:
-    + Update interval seems to update correctly
-    + Dispaly vertically
-    + Decimal Place
-    + All font colour related stuff
-    + Enabling/disabling labels
-    + Changing font family
-    + Changing font size
-
-    What doesnt work as intended:
-    - Some wacky readings when disabling/enabling interfaces
-    */
 
     _onSettingsChanged: function (settings, key) {
         switch(key) {
@@ -331,22 +312,18 @@ NetSpeedExtension.prototype = {
                 this._setAllLabelStyles();
                 break;
             case 'use-custom-decorations':
-                // TODO: Decorations update but labels dont change width
                 this._useCustomDecorations =
                     this._settings.get_boolean('use-custom-decorations');
                 if (this._useCustomDecorations) {
                     this._speedDownDecoration =
                         this._settings.get_string(
                             'custom-speed-down-decoration');
-
                     this._speedUpDecoration =
                         this._settings.get_string(
                             'custom-speed-up-decoration');
-
                     this._speedTotalDecoration =
                         this._settings.get_string(
                             'custom-speed-total-decoration');
-
                     this._usageTotalDecoration =
                         this._settings.get_string(
                             'custom-usage-total-decoration');
@@ -382,7 +359,6 @@ NetSpeedExtension.prototype = {
     },
 
     // Gnome Shell Functions
-
     _init: function () {
         this._isRunning = false;
         this._runNum = 0;
@@ -443,8 +419,6 @@ NetSpeedExtension.prototype = {
             this._customUsageTotalDecoration : 'Σ';
 
         this._setAllLabelStyles();
-        if (showDebug)
-            this._debugLabel.set_style(this._createLabelStyle('down'));
 
         if (this._showSpeedDown) this._downLabel.show();
         if (this._showSpeedUp) this._upLabel.show();
