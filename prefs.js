@@ -27,8 +27,41 @@ const ExtensionUtils = imports.misc.extensionUtils
 const Me = ExtensionUtils.getCurrentExtension();
 const Settings = Me.imports.settings;
 
+function getInterfaces () {
+    let interfaces = [];
+    try {
+        let fileContentsRaw = GLib.file_get_contents('/proc/net/dev');
+        let fileContents = fileContentsRaw[1].toString().split('\n');
+        // Skip the first 2 header lines:
+        for (let i = 2; i < fileContents.length; i++) {
+            let lineData = fileContents[i].trim().split(/\W+/);
+            let interfaceName = lineData[0];
+            if (interfaceName) interfaces.push(interfaceName);
 
-function NetSpeedPrefs() {
+        }
+    } catch (e) { }
+    return interfaces;
+}
+
+function hexColourToRgb (hexValue) {
+    let colour = new Gdk.Color();
+    colour.red = parseInt(hexValue.slice(1,3), 16) * 256;
+    colour.green = parseInt(hexValue.slice(3,5), 16) * 256;
+    colour.blue = parseInt(hexValue.slice(5,7), 16) * 256;
+    return colour;
+}
+
+function rgbColourToHex (rgbColour) {
+    let redHex = (parseInt(rgbColour.red / 256)).toString(16);
+    if (redHex.length == 1) redHex = "0" + redHex;
+    let greenHex = (parseInt(rgbColour.green / 256)).toString(16);
+    if (greenHex.length == 1) greenHex = "0" + greenHex;
+    let blueHex = (parseInt(rgbColour.blue / 256)).toString(16);
+    if (blueHex.length == 1) blueHex = "0" + blueHex;
+    return "#" + redHex + greenHex + blueHex;
+}
+
+function NetSpeedPrefs () {
     this._init();
 }
 
@@ -46,22 +79,6 @@ NetSpeedPrefs.prototype = {
 
         this._builder.connect_signals_full(
             Lang.bind(this, this._signalConnector));
-    },
-
-    _getInterfaces: function () {
-        let interfaces = [];
-        try {
-            let fileContentsRaw = GLib.file_get_contents('/proc/net/dev');
-            let fileContents = fileContentsRaw[1].toString().split('\n');
-            // Skip the first 2 header lines:
-            for (let i = 2; i < fileContents.length; i++) {
-                let lineData = fileContents[i].trim().split(/\W+/);
-                let interfaceName = lineData[0];
-                if (interfaceName) interfaces.push(interfaceName);
-
-            }
-        } catch (e) { }
-        return interfaces;
     },
 
     _populateAbout: function () {
@@ -167,39 +184,27 @@ NetSpeedPrefs.prototype = {
         value = this._settings.get_boolean('show-usage-total');
         widget.set_active(value);
 
-        let colour = new Gdk.Color();
+
 
         // Speed Down Colour
         widget = this._builder.get_object('speedDownColour');
         value = this._settings.get_string('custom-speed-down-colour');
-        colour.red = parseInt(value.slice(1,3), 16) * 256;
-        colour.green = parseInt(value.slice(3,5), 16) * 256;
-        colour.blue = parseInt(value.slice(5,7), 16) * 256;
-        widget.set_color(colour);
+        widget.set_color(hexColourToRgb(value));
 
         // Speed Up Colour
         widget = this._builder.get_object('speedUpColour');
         value = this._settings.get_string('custom-speed-up-colour');
-        colour.red = parseInt(value.slice(1,3), 16) * 256;
-        colour.green = parseInt(value.slice(3,5), 16) * 256;
-        colour.blue = parseInt(value.slice(5,7), 16) * 256;
-        widget.set_color(colour);
+        widget.set_color(hexColourToRgb(value));
 
         // Speed Total Colour
         widget = this._builder.get_object('speedTotalColour');
         value = this._settings.get_string('custom-speed-total-colour');
-        colour.red = parseInt(value.slice(1,3), 16) * 256;
-        colour.green = parseInt(value.slice(3,5), 16) * 256;
-        colour.blue = parseInt(value.slice(5,7), 16) * 256;
-        widget.set_color(colour);
+        widget.set_color(hexColourToRgb(value));
 
         // Usage Total Colour
         widget = this._builder.get_object('usageTotalColour');
         value = this._settings.get_string('custom-usage-total-colour');
-        colour.red = parseInt(value.slice(1,3), 16) * 256;
-        colour.green = parseInt(value.slice(3,5), 16) * 256;
-        colour.blue = parseInt(value.slice(5,7), 16) * 256;
-        widget.set_color(colour);
+        widget.set_color(hexColourToRgb(value));
 
         // Custom Speed Down Decoration
         widget = this._builder.get_object('speedDownDecoration');
@@ -232,7 +237,7 @@ NetSpeedPrefs.prototype = {
 
         widget = this._builder.get_object('interfaceFlowBox');
         let savedInterfaces = this._settings.get_strv('interfaces');
-        let currentInterfaces = this._getInterfaces();
+        let currentInterfaces = getInterfaces();
         let displayInterfaces = savedInterfaces.slice()
         for (let i = 0; i < currentInterfaces.length; i++) {
             if (displayInterfaces.indexOf(currentInterfaces[i]) < 0) {
@@ -350,15 +355,8 @@ NetSpeedPrefs.prototype = {
         },
 
         speedDownColourChanged: function (button) {
-            let colour = button.get_color();
-            let redHex = (parseInt(colour.red / 256)).toString(16);
-            if (redHex.length == 1) redHex = "0" + redHex;
-            let greenHex = (parseInt(colour.green / 256)).toString(16);
-            if (greenHex.length == 1) greenHex = "0" + greenHex;
-            let blueHex = (parseInt(colour.blue / 256)).toString(16);
-            if (blueHex.length == 1) blueHex = "0" + blueHex;
-            let totalHex = "#" + redHex + greenHex + blueHex;
-            this._settings.set_string('custom-speed-down-colour', totalHex);
+            let colour = rgbColourToHex(button.get_color());
+            this._settings.set_string('custom-speed-down-colour', colour);
             this._settings.apply();
         },
 
@@ -374,15 +372,8 @@ NetSpeedPrefs.prototype = {
         },
 
         speedUpColourChanged: function (button) {
-            let colour = button.get_color();
-            let redHex = (parseInt(colour.red / 256)).toString(16);
-            if (redHex.length == 1) redHex = "0" + redHex;
-            let greenHex = (parseInt(colour.green / 256)).toString(16);
-            if (greenHex.length == 1) greenHex = "0" + greenHex;
-            let blueHex = (parseInt(colour.blue / 256)).toString(16);
-            if (blueHex.length == 1) blueHex = "0" + blueHex;
-            let totalHex = "#" + redHex + greenHex + blueHex;
-            this._settings.set_string('custom-speed-up-colour', totalHex);
+            let colour = rgbColourToHex(button.get_color());
+            this._settings.set_string('custom-speed-up-colour', colour);
             this._settings.apply();
         },
 
@@ -398,15 +389,8 @@ NetSpeedPrefs.prototype = {
         },
 
         speedTotalColourChanged: function (button) {
-            let colour = button.get_color();
-            let redHex = (parseInt(colour.red / 256)).toString(16);
-            if (redHex.length == 1) redHex = "0" + redHex;
-            let greenHex = (parseInt(colour.green / 256)).toString(16);
-            if (greenHex.length == 1) greenHex = "0" + greenHex;
-            let blueHex = (parseInt(colour.blue / 256)).toString(16);
-            if (blueHex.length == 1) blueHex = "0" + blueHex;
-            let totalHex = "#" + redHex + greenHex + blueHex;
-            this._settings.set_string('custom-speed-total-colour', totalHex);
+            let colour = rgbColourToHex(button.get_color());
+            this._settings.set_string('custom-speed-total-colour', colour);
             this._settings.apply();
         },
 
@@ -422,15 +406,8 @@ NetSpeedPrefs.prototype = {
         },
 
         usageTotalColourChanged: function (button) {
-            let colour = button.get_color();
-            let redHex = (parseInt(colour.red / 256)).toString(16);
-            if (redHex.length == 1) redHex = "0" + redHex;
-            let greenHex = (parseInt(colour.green / 256)).toString(16);
-            if (greenHex.length == 1) greenHex = "0" + greenHex;
-            let blueHex = (parseInt(colour.blue / 256)).toString(16);
-            if (blueHex.length == 1) blueHex = "0" + blueHex;
-            let totalHex = "#" + redHex + greenHex + blueHex;
-            this._settings.set_string('custom-usage-total-colour', totalHex);
+            let colour = rgbColourToHex(button.get_color());
+            this._settings.set_string('custom-usage-total-colour', colour);
             this._settings.apply();
         },
 
