@@ -42,7 +42,7 @@ NetSpeedExtension.prototype = {
         let styleText = '';
 
         if (!!labelName) {
-            let labelNames = ['down', 'up', 'total', 'usage']
+            let labelNames = ['down', 'up', 'total', 'usage'];
             let labelColours = [this._customSpeedDownColour,
                                 this._customSpeedUpColour,
                                 this._customSpeedTotalColour,
@@ -58,7 +58,7 @@ NetSpeedExtension.prototype = {
             ('font-size:' + this._customFontSize + 'pt;');
         if (this._useFixedWidth) {
             styleText += this._widthIsMinimum ? 'min-width:' : 'width:';
-            styleText += this._customFixedWidth + 'px;'
+            styleText += this._customFixedWidth + 'px;';
         }
         styleText += 'text-align:right;';
         return styleText;
@@ -188,7 +188,7 @@ NetSpeedExtension.prototype = {
             this._formatSpeed(this._usageTotal) + this._usageTotalDecoration);
 
         if (this._runNum > this._currentRunNum){
-            this._currentRunNum = this._runNum
+            this._currentRunNum = this._runNum;
             Main.Mainloop.timeout_add_seconds(this._updateInterval,
                                   Lang.bind(this, this._update));
             return false;
@@ -469,6 +469,5 @@ NetSpeedExtension.prototype = {
 };
 
 function init() {
-    extension = new NetSpeedExtension();
-    return extension;
+    return new NetSpeedExtension();
 }

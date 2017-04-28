@@ -23,7 +23,7 @@ const Gtk = imports.gi.Gtk;
 
 const Lang = imports.lang;
 
-const ExtensionUtils = imports.misc.extensionUtils
+const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Settings = Me.imports.settings;
 
@@ -246,7 +246,7 @@ NetSpeedPrefs.prototype = {
         }
         displayInterfaces.sort();
 
-        this._interfaceCheckBoxes = []
+        this._interfaceCheckBoxes = [];
 
         for (let i = 0; i < displayInterfaces.length; i++) {
             let checkbox = new Gtk.CheckButton();
@@ -303,7 +303,7 @@ NetSpeedPrefs.prototype = {
 
         fontFamilyChanged: function (comboBox) {
             let model = comboBox.get_model();
-            let iter = comboBox.get_active_iter()[1]
+            let iter = comboBox.get_active_iter()[1];
             let value = model.get_value(iter, 0);
             this._settings.set_string('custom-font-family', value);
             this._settings.apply();
