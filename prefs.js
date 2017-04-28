@@ -1,4 +1,4 @@
-/*Copyright (C) 2017 Tom Hartill
+/* Copyright (C) 2017 Tom Hartill
 
 prefs.js - Part of the NetSpeed Gnome Shell Extension.
 
@@ -12,7 +12,7 @@ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
 A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-AppChooser; if not, see http://www.gnu.org/licenses/.
+NetSpeed; if not, see http://www.gnu.org/licenses/.
 
 An up to date version can also be found at:
 https://github.com/Tomha/gnome-shell-extension-netspeed */
