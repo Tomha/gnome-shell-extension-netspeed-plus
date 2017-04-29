@@ -32,7 +32,8 @@ const Settings = Me.imports.settings;
 
 const showDebug = false;
 
-// TODO: Fix resume usage on boot
+// TODO: Resume on boot needs testing
+// TODO: Fix resetting usage
 
 function InterfaceData() {
     this._init();
@@ -40,7 +41,7 @@ function InterfaceData() {
 
 InterfaceData.prototype = {
     _init() {
-        this.initialReceive = 0;
+        this.initialReceived = 0;
         this.totalReceived = 0;
         this.lastReceived = 0;
         this.initialTransmitted = 0;
@@ -476,20 +477,39 @@ NetSpeedExtension.prototype = {
         this._interfaceNames = []
         this._interfaceData = []
 
-        /*let lastBootTime = this._settings.get_int('last-boot-time');
+        let lastBootTime = this._settings.get_int('last-boot-time');
         let thisBootTime = this._getBootTime();
         if (lastBootTime != thisBootTime) {
-            this._initialReceived = this._initialTransmitted = 0;
-            this._settings.set_double('initial-receive-count', 0);
-            this._settings.set_double('initial-transmit-count', 0);
-            this._settings.set_double('last-boot-time', this._getBootTime());
+            this._settings.set_double('last-boot-time', thisBootTime);
             this._settings.apply();
         } else {
-            this._initialReceived =
-              this._settings.get_double('initial-receive-count');
-            this._initialTransmitted =
-              this._settings.get_double('initial-transmit-count');
-        }*/
+            /* Assumes there exist 3 arrays with corresponding values for each
+             * interface to be tracked. If they are mismatched this will cause
+             * faulty readouts, but it isn't disasterous, the usageTotal can be
+             * manually reset and the speed values will correct next update. If
+             * they are not of the same length though...
+             */
+            // Test for equal lengths first?
+            let initialReceivedValues =
+              this._settings.get_strv('initial-receive-counts');
+            let initialTransmittedValues =
+              this._settings.get_strv('initial-transmit-counts');
+
+            for (let i = 0; i < this._trackedInterfaces.length; i++) {
+                let name = this._trackedInterfaces[i];
+                this._interfaceNames.push(name);
+                let interfaceData = new InterfaceData();
+                interfaceData.initialReceived =
+                    interfaceData.totalReceived =
+                        interfaceData.lastReceived =
+                            parseInt(initialReceivedValues[i]);
+                interfaceData.initialTransmitted =
+                    interfaceData.totalTransmitted =
+                        interfaceData.lastTransmitted =
+                            parseInt(initialTransmittedValues[i]);
+                this._interfaceData.push(interfaceData);
+            }
+        }
 
         // Begin
         Main.panel._rightBox.insert_child_at_index(this._button, 0);
@@ -498,6 +518,22 @@ NetSpeedExtension.prototype = {
 
     disable: function () {
         this._isRunning = false
+
+        let initialReceivedValues = initialTransmittedValues = []
+        for (let i = 0; i < this._trackedInterfaces.length; i++) {
+            let name = this._trackedInterfaces[i];
+            let index = this._interfaceNames.indexOf(name);
+            let received = this._interfaceData[index].initialReceived;
+            let transmitted = this._interfaceData[index].initialTransmitted;
+            initialReceivedValues.push(received.toString());
+            initialTransmittedValues.push(transmitted.toString());
+        }
+        // ERROR WITH SET STRV
+        this._settings.set_strv('initial-receive-counts',
+                                initialReceivedValues);
+        this._settings.set_strv('initial-transmit-counts',
+                                initialTransmittedValues);
+
         Main.panel._rightBox.remove_child(this._button);
     }
 };

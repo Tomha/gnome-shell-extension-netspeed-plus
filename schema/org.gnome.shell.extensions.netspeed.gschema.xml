@@ -130,13 +130,13 @@
             <description>A custom string which can be placed at the end of the total usage statistic.</description>
 	</key>
 
-	<key name="initial-receive-count" type="d">
-            <default>0</default>
+	<key name="initial-receive-counts" type="as">
+            <default>[]</default>
             <summary>Total initial received bytes saved from last session.</summary>
             <description>Total received bytes from when the extension was last enabled. Used to persist usage records across shell restarts.</description>
         </key>
-	<key name="initial-transmit-count" type="d">
-            <default>0</default>
+	<key name="initial-transmit-counts" type="as">
+            <default>[]</default>
             <summary>Total initial transmitted bytes saved from last session.</summary>
             <description>Total transmitted bytes from when the extension was last enabled. Used to persist usage records across shell restarts.</description>
         </key>
