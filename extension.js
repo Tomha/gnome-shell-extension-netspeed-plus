@@ -32,6 +32,23 @@ const Settings = Me.imports.settings;
 
 const showDebug = false;
 
+// TODO: Fix resume usage on boot
+
+function InterfaceData() {
+    this._init();
+}
+
+InterfaceData.prototype = {
+    _init() {
+        this.initialReceive = 0;
+        this.totalReceived = 0;
+        this.lastReceived = 0;
+        this.initialTransmitted = 0;
+        this.totalTransmitted = 0;
+        this.lastTransmitted = 0;
+    }
+};
+
 function NetSpeedExtension() {
     this._init();
 }
@@ -84,27 +101,61 @@ NetSpeedExtension.prototype = {
         return (timeNow - upTime);
     },
 
-    _getThroughput: function () {
-        try {
-            let received = 0;
-            let transmitted = 0;
-
-            let fileContentsRaw = GLib.file_get_contents('/proc/net/dev');
-            let fileContents = fileContentsRaw[1].toString().split('\n');
-            // Skip the first 2 header lines:
-            for (let i = 2; i < fileContents.length; i++) {
-                let lineData = fileContents[i].trim().split(/\W+/);
-                if (this._interfaces.indexOf(lineData[0]) >= 0) {
-                    received += parseInt(lineData[1]);
-                    transmitted += parseInt(lineData[9]);
-                }
+    _updateInterfaceData() {
+        let fileContentsRaw = GLib.file_get_contents('/proc/net/dev');
+        let fileContents = fileContentsRaw[1].toString().split('\n');
+        // Skip the first 2 header lines:
+        for (let i = 2; i < fileContents.length; i++) {
+            let lineData = fileContents[i].trim().split(/\W+/);
+            let interfaceName = lineData[0];
+            let interfaceIndex = this._interfaceNames.indexOf(interfaceName);
+            if (interfaceIndex < 0) {
+                let interfaceData = new InterfaceData();
+                interfaceData.initialReceived =
+                    interfaceData.totalReceived =
+                        interfaceData.lastReceived = 0;
+                interfaceData.initialTransmitted =
+                    interfaceData.totalTransmitted =
+                        interfaceData.lastTransmitted = 0
+                this._interfaceNames.push(interfaceName);
+                this._interfaceData.push(interfaceData);
+            } else {
+                let interfaceData = this._interfaceData[interfaceIndex];
+                interfaceData.lastReceived = interfaceData.totalReceived;
+                interfaceData.lastTransmitted = interfaceData.totalTransmitted;
+                interfaceData.totalReceived = lineData[1];
+                interfaceData.totalTransmitted = lineData[9];
             }
-
-            return [received, transmitted];
-        } catch (e) {
-            // Will cause 0 increase in stats over this interval
-            return [this._totalReceived, this._totalTransmitted];
         }
+    },
+
+    _calculateSpeeds() {
+        let speedDown = speedUp = speedTotal = usageTotal = 0;
+        for (let i = 0; i < this._trackedInterfaces.length; i++) {
+            let interfaceName = this._trackedInterfaces[i];
+            let interfaceIndex = this._interfaceNames.indexOf(interfaceName);
+            if (interfaceIndex < 0) continue; // This shouldn't happen
+            let interfaceData = this._interfaceData[interfaceIndex];
+            let justReceived =
+                interfaceData.totalReceived - interfaceData.lastReceived;
+            let justTransmitted =
+                interfaceData.totalTransmitted - interfaceData.lastTransmitted;
+            speedDown += justReceived
+            speedUp += justTransmitted
+            speedTotal += (justReceived + justTransmitted)
+
+            let totalDown =
+                interfaceData.totalReceived - interfaceData.initialReceived;
+            let totalUp =
+                interfaceData.totalTransmitted -
+                    interfaceData.initialTransmitted;
+            usageTotal += (totalDown + totalUp);
+
+        }
+        this._speedDown = speedDown / this._updateInterval;
+        this._speedUp = speedUp / this._updateInterval;
+        this._speedTotal = speedTotal / this._updateInterval;
+        this._usageTotal = usageTotal;
     },
 
     _loadSettings: function() {
@@ -131,7 +182,7 @@ NetSpeedExtension.prototype = {
             this._settings.get_string('custom-usage-total-decoration');
         this._decimalPlace = this._settings.get_int('decimal-place');
         this._displayVertical = this._settings.get_boolean('display-vertical');
-        this._interfaces = this._settings.get_strv('interfaces');
+        this._trackedInterfaces = this._settings.get_strv('interfaces');
         this._showSpeedDown = this._settings.get_boolean('show-speed-down');
         this._showSpeedTotal = this._settings.get_boolean('show-speed-total');
         this._showSpeedUp = this._settings.get_boolean('show-speed-up');
@@ -161,21 +212,8 @@ NetSpeedExtension.prototype = {
     },
 
     _update: function () {
-        let throughput = this._getThroughput();
-        let received = throughput[0];
-        let transmitted = throughput[1];
-
-        let justReceived = received - this._totalReceived;
-        let justTransmitted = transmitted - this._totalTransmitted;
-
-        this._totalReceived = received;
-        this._totalTransmitted = transmitted;
-
-        this._speedDown = justReceived / this._updateInterval;
-        this._speedUp = justTransmitted / this._updateInterval;
-        this._speedTotal = this._speedDown + this._speedUp;
-        this._usageTotal = received - this._initialReceived +
-                             transmitted - this._initialTransmitted;
+        this._updateInterfaceData();
+        this._calculateSpeeds();
 
         // No need to update text for hidden labels
         if (this._showSpeedDown) this._downLabel.set_text(
@@ -275,11 +313,7 @@ NetSpeedExtension.prototype = {
                 this._labelBox.set_vertical(this._displayVertical);
                 break;
             case 'interfaces':
-                // TODO: Usage count goes hugely negative if disable main iface
-                //          Probably need per-interface tracking =/
-                // TODO: First tick has count for missed seconds, not just last
-                //          Always track all interfaces and keep stats?
-                this._interfaces = this._settings.get_strv('interfaces');
+                this._trackedInterfaces = this._settings.get_strv('interfaces');
                 break;
             case 'show-speed-down':
                 if (this._settings.get_boolean('show-speed-down'))
@@ -426,7 +460,7 @@ NetSpeedExtension.prototype = {
         if (this._showUsageTotal) this._usageLabel.show();
 
         if (showDebug) {
-            this._debugLabel.set_text("DEBUG");
+            this._debugLabel.set_text("DEBUG");t
             this._debugLabel.show();
         }
 
@@ -438,11 +472,11 @@ NetSpeedExtension.prototype = {
         this._speedTotal = 0;
         this._usageTotal = 0;
 
-        let throughput = this._getThroughput();
-        this._totalReceived = throughput[0];
-        this._totalTransmitted = throughput[1];
+        // New
+        this._interfaceNames = []
+        this._interfaceData = []
 
-        let lastBootTime = this._settings.get_int('last-boot-time');
+        /*let lastBootTime = this._settings.get_int('last-boot-time');
         let thisBootTime = this._getBootTime();
         if (lastBootTime != thisBootTime) {
             this._initialReceived = this._initialTransmitted = 0;
@@ -455,7 +489,7 @@ NetSpeedExtension.prototype = {
               this._settings.get_double('initial-receive-count');
             this._initialTransmitted =
               this._settings.get_double('initial-transmit-count');
-        }
+        }*/
 
         // Begin
         Main.panel._rightBox.insert_child_at_index(this._button, 0);
