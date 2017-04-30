@@ -18,9 +18,6 @@ An up to date version can also be found at:
 https://github.com/Tomha/gnome-shell-extension-netspeed */
 
 const GLib = imports.gi.GLib;
-const Gio = imports.gi.Gio;
-const Gtk = imports.gi.Gtk;
-const Pango = imports.gi.Pango;
 const St = imports.gi.St;
 
 const Lang = imports.lang;
