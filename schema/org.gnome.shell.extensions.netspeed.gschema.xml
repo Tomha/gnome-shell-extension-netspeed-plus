@@ -140,7 +140,7 @@
             <summary>Total initial transmitted bytes saved from last session.</summary>
             <description>Total transmitted bytes from when the extension was last enabled. Used to persist usage records across shell restarts.</description>
         </key>
-	<key name="last-boot-time" type="d">
+	<key name="last-boot-time" type="i">
             <default>0</default>
             <summary>Boot time as of last time the extension was run.</summary>
             <description>Boot time of the system when the extension was last disabled. Used to check of previous initial recieve/transmit counts should be used.</description>

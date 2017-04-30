@@ -32,8 +32,8 @@ const Settings = Me.imports.settings;
 
 const showDebug = false;
 
-// TODO: Resume on boot needs testing
-// TODO: Fix resetting usage
+// TODO: If lastTransmitted/Received or tracked interfaces are changed between
+//          enables/disables then values may get wonky - this needs detecting.
 
 function InterfaceData() {
     this._init();
@@ -94,12 +94,16 @@ NetSpeedExtension.prototype = {
         return text + ["B", "K", "M", "G"][unit];
     },
 
+
     _getBootTime: function () {
+        // Accurate to +- 1 second due to rounding errors and processing time.
         let fileContentsRaw = GLib.file_get_contents('/proc/uptime');
         let fileContents = fileContentsRaw[1].toString().split(/\W+/);
         let upTime = parseInt(fileContents[0]);
-        let timeNow = new Date().getTime();
-        return (timeNow - upTime);
+        let date = new Date()
+        let timeNow = parseInt(parseInt(date.getTime()) / 1000);
+        let bootTime = (timeNow - upTime)
+        return bootTime;
     },
 
     _updateInterfaceData() {
@@ -237,8 +241,12 @@ NetSpeedExtension.prototype = {
     // Event Handler Functions
     _onButtonClicked: function (button, event) {
         if (event.get_button() == 3) {  // Clear counter on right click
-            this._initialReceived = this._totalReceived;
-            this._initialTransmitted = this._totalTransmitted;
+            for(let i = 0; i < this._interfaceData.length; i++) {
+                this._interfaceData[i].initialReceived =
+                    this._interfaceData[i].totalReceived;
+                this._interfaceData[i].initialTransmitted =
+                    this._interfaceData[i].totalTransmitted;
+            }
             this._usageLabel.set_text("0B" + this._usageTotalDecoration);
         }
     },
@@ -461,7 +469,7 @@ NetSpeedExtension.prototype = {
         if (this._showUsageTotal) this._usageLabel.show();
 
         if (showDebug) {
-            this._debugLabel.set_text("DEBUG");t
+            this._debugLabel.set_text("DEBUG");
             this._debugLabel.show();
         }
 
@@ -479,8 +487,10 @@ NetSpeedExtension.prototype = {
 
         let lastBootTime = this._settings.get_int('last-boot-time');
         let thisBootTime = this._getBootTime();
-        if (lastBootTime != thisBootTime) {
-            this._settings.set_double('last-boot-time', thisBootTime);
+        let timeDiff = thisBootTime - lastBootTime;
+
+        if (timeDiff > 1 || timeDiff < -1) { // timeDiff accurate to +- 1 second
+            this._settings.set_int('last-boot-time', thisBootTime);
             this._settings.apply();
         } else {
             /* Assumes there exist 3 arrays with corresponding values for each
@@ -519,20 +529,22 @@ NetSpeedExtension.prototype = {
     disable: function () {
         this._isRunning = false
 
-        let initialReceivedValues = initialTransmittedValues = []
+        let initialReceivedValues = []
+        let initialTransmittedValues = [];
         for (let i = 0; i < this._trackedInterfaces.length; i++) {
             let name = this._trackedInterfaces[i];
             let index = this._interfaceNames.indexOf(name);
+            if (index < 0) continue
             let received = this._interfaceData[index].initialReceived;
             let transmitted = this._interfaceData[index].initialTransmitted;
             initialReceivedValues.push(received.toString());
             initialTransmittedValues.push(transmitted.toString());
         }
-        // ERROR WITH SET STRV
         this._settings.set_strv('initial-receive-counts',
                                 initialReceivedValues);
         this._settings.set_strv('initial-transmit-counts',
                                 initialTransmittedValues);
+        this._settings.apply();
 
         Main.panel._rightBox.remove_child(this._button);
     }
