@@ -32,9 +32,6 @@ const Settings = Me.imports.settings;
 
 const showDebug = false;
 
-// TODO: If lastTransmitted/Received or tracked interfaces are changed between
-//          enables/disables then values may get wonky - this needs detecting.
-
 function InterfaceData() {
     this._init();
 }
@@ -55,7 +52,35 @@ function NetSpeedExtension() {
 }
 
 NetSpeedExtension.prototype = {
-    // Internal Functions
+    _calculateSpeeds() {
+        let speedDown = speedUp = speedTotal = usageTotal = 0;
+        for (let i = 0; i < this._trackedInterfaces.length; i++) {
+            let interfaceName = this._trackedInterfaces[i];
+            let interfaceIndex = this._interfaceNames.indexOf(interfaceName);
+            if (interfaceIndex < 0) continue; // This shouldn't happen
+            let interfaceData = this._interfaceData[interfaceIndex];
+            let justReceived =
+                interfaceData.totalReceived - interfaceData.lastReceived;
+            let justTransmitted =
+                interfaceData.totalTransmitted - interfaceData.lastTransmitted;
+            speedDown += justReceived;
+            speedUp += justTransmitted;
+            speedTotal += (justReceived + justTransmitted)
+
+            let totalDown =
+                interfaceData.totalReceived - interfaceData.initialReceived;
+            let totalUp =
+                interfaceData.totalTransmitted -
+                    interfaceData.initialTransmitted;
+            usageTotal += (totalDown + totalUp);
+
+        }
+        this._speedDown = speedDown / this._updateInterval;
+        this._speedUp = speedUp / this._updateInterval;
+        this._speedTotal = speedTotal / this._updateInterval;
+        this._usageTotal = usageTotal;
+    },
+
     _createLabelStyle: function (labelName) {
         let styleText = '';
 
@@ -103,63 +128,6 @@ NetSpeedExtension.prototype = {
         let date = new Date()
         let timeNow = parseInt(parseInt(date.getTime()) / 1000);
         return (timeNow - upTime);
-    },
-
-    _updateInterfaceData() {
-        let fileContentsRaw = GLib.file_get_contents('/proc/net/dev');
-        let fileContents = fileContentsRaw[1].toString().split('\n');
-        // Skip the first 2 header lines:
-        for (let i = 2; i < fileContents.length; i++) {
-            let lineData = fileContents[i].trim().split(/\W+/);
-            let interfaceName = lineData[0];
-            let interfaceIndex = this._interfaceNames.indexOf(interfaceName);
-            if (interfaceIndex < 0) {
-                let interfaceData = new InterfaceData();
-                interfaceData.initialReceived =
-                    interfaceData.totalReceived =
-                        interfaceData.lastReceived = 0;
-                interfaceData.initialTransmitted =
-                    interfaceData.totalTransmitted =
-                        interfaceData.lastTransmitted = 0
-                this._interfaceNames.push(interfaceName);
-                this._interfaceData.push(interfaceData);
-            } else {
-                let interfaceData = this._interfaceData[interfaceIndex];
-                interfaceData.lastReceived = interfaceData.totalReceived;
-                interfaceData.lastTransmitted = interfaceData.totalTransmitted;
-                interfaceData.totalReceived = lineData[1];
-                interfaceData.totalTransmitted = lineData[9];
-            }
-        }
-    },
-
-    _calculateSpeeds() {
-        let speedDown = speedUp = speedTotal = usageTotal = 0;
-        for (let i = 0; i < this._trackedInterfaces.length; i++) {
-            let interfaceName = this._trackedInterfaces[i];
-            let interfaceIndex = this._interfaceNames.indexOf(interfaceName);
-            if (interfaceIndex < 0) continue; // This shouldn't happen
-            let interfaceData = this._interfaceData[interfaceIndex];
-            let justReceived =
-                interfaceData.totalReceived - interfaceData.lastReceived;
-            let justTransmitted =
-                interfaceData.totalTransmitted - interfaceData.lastTransmitted;
-            speedDown += justReceived
-            speedUp += justTransmitted
-            speedTotal += (justReceived + justTransmitted)
-
-            let totalDown =
-                interfaceData.totalReceived - interfaceData.initialReceived;
-            let totalUp =
-                interfaceData.totalTransmitted -
-                    interfaceData.initialTransmitted;
-            usageTotal += (totalDown + totalUp);
-
-        }
-        this._speedDown = speedDown / this._updateInterval;
-        this._speedUp = speedUp / this._updateInterval;
-        this._speedTotal = speedTotal / this._updateInterval;
-        this._usageTotal = usageTotal;
     },
 
     _loadSettings: function() {
@@ -237,7 +205,33 @@ NetSpeedExtension.prototype = {
         } else return this._isRunning;
     },
 
-    // Event Handler Functions
+    _updateInterfaceData() {
+        let fileContentsRaw = GLib.file_get_contents('/proc/net/dev');
+        let fileContents = fileContentsRaw[1].toString().split('\n');
+        for (let i = 2; i < fileContents.length; i++) { // i = 2 skips headers
+            let lineData = fileContents[i].trim().split(/\W+/);
+            let interfaceName = lineData[0];
+            let interfaceIndex = this._interfaceNames.indexOf(interfaceName);
+            if (interfaceIndex < 0) {
+                let interfaceData = new InterfaceData();
+                interfaceData.initialReceived =
+                    interfaceData.totalReceived =
+                        interfaceData.lastReceived = 0;
+                interfaceData.initialTransmitted =
+                    interfaceData.totalTransmitted =
+                        interfaceData.lastTransmitted = 0;
+                this._interfaceNames.push(interfaceName);
+                this._interfaceData.push(interfaceData);
+            } else {
+                let interfaceData = this._interfaceData[interfaceIndex];
+                interfaceData.lastReceived = interfaceData.totalReceived;
+                interfaceData.lastTransmitted = interfaceData.totalTransmitted;
+                interfaceData.totalReceived = lineData[1];
+                interfaceData.totalTransmitted = lineData[9];
+            }
+        }
+    },
+
     _onButtonClicked: function (button, event) {
         if (event.get_button() == 3) {  // Clear counter on right click
             for(let i = 0; i < this._interfaceData.length; i++) {
@@ -400,7 +394,6 @@ NetSpeedExtension.prototype = {
         }
     },
 
-    // Gnome Shell Functions
     _init: function () {
         this._isRunning = false;
         this._runNum = 0;
@@ -474,14 +467,13 @@ NetSpeedExtension.prototype = {
 
         this._labelBox.set_vertical(this._displayVertical);
 
-        // Set initial values
         this._speedDown = 0;
         this._speedUp = 0;
         this._speedTotal = 0;
         this._usageTotal = 0;
 
-        this._interfaceNames = []
-        this._interfaceData = []
+        this._interfaceNames = [];
+        this._interfaceData = [];
 
         let lastBootTime = this._settings.get_int('last-boot-time');
         let thisBootTime = this._getBootTime();
@@ -491,12 +483,6 @@ NetSpeedExtension.prototype = {
             this._settings.set_int('last-boot-time', thisBootTime);
             this._settings.apply();
         } else {
-            /* Assumes there exist 3 arrays with corresponding values for each
-             * interface to be tracked. If they are mismatched this will cause
-             * faulty readouts, but it isn't disasterous, the usageTotal can be
-             * manually reset and the speed values will correct next update. If
-             * they are not of the same length though...
-             */
             let initialReceivedValues =
               this._settings.get_strv('initial-receive-counts');
             let initialTransmittedValues =
@@ -506,9 +492,6 @@ NetSpeedExtension.prototype = {
             if (!initialReceivedValues.length ==
                     initialTransmittedValues.length ==
                             this._trackedInterfaces.length) {
-                this._debugLabel.set_text(initialReceivedValues.length.toString() +
-                    "/" + initialTransmittedValues.length.toString() +
-                        "/" + this._trackedInterfaces.length.toString());
                 Main.panel._rightBox.insert_child_at_index(this._button, 0);
                 this._update();
                 return;
@@ -533,20 +516,19 @@ NetSpeedExtension.prototype = {
             }
         }
 
-        // Begin
         Main.panel._rightBox.insert_child_at_index(this._button, 0);
         this._update();
     },
 
     disable: function () {
-        this._isRunning = false
+        this._isRunning = false;
 
-        let initialReceivedValues = []
+        let initialReceivedValues = [];
         let initialTransmittedValues = [];
         for (let i = 0; i < this._trackedInterfaces.length; i++) {
             let name = this._trackedInterfaces[i];
             let index = this._interfaceNames.indexOf(name);
-            if (index < 0) continue
+            if (index < 0) continue;
             let received = this._interfaceData[index].initialReceived;
             let transmitted = this._interfaceData[index].initialTransmitted;
             initialReceivedValues.push(received.toString());
