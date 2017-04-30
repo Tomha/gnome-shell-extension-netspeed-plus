@@ -49,35 +49,6 @@ function NetSpeedExtension() {
 }
 
 NetSpeedExtension.prototype = {
-    _calculateSpeeds() {
-        let speedDown = speedUp = speedTotal = usageTotal = 0;
-        for (let i = 0; i < this._trackedInterfaces.length; i++) {
-            let interfaceName = this._trackedInterfaces[i];
-            let interfaceIndex = this._interfaceNames.indexOf(interfaceName);
-            if (interfaceIndex < 0) continue; // This shouldn't happen
-            let interfaceData = this._interfaceData[interfaceIndex];
-            let justReceived =
-                interfaceData.totalReceived - interfaceData.lastReceived;
-            let justTransmitted =
-                interfaceData.totalTransmitted - interfaceData.lastTransmitted;
-            speedDown += justReceived;
-            speedUp += justTransmitted;
-            speedTotal += (justReceived + justTransmitted)
-
-            let totalDown =
-                interfaceData.totalReceived - interfaceData.initialReceived;
-            let totalUp =
-                interfaceData.totalTransmitted -
-                    interfaceData.initialTransmitted;
-            usageTotal += (totalDown + totalUp);
-
-        }
-        this._speedDown = speedDown / this._updateInterval;
-        this._speedUp = speedUp / this._updateInterval;
-        this._speedTotal = speedTotal / this._updateInterval;
-        this._usageTotal = usageTotal;
-    },
-
     _createLabelStyle: function (labelName) {
         let styleText = '';
 
@@ -182,17 +153,8 @@ NetSpeedExtension.prototype = {
 
     _update: function () {
         this._updateInterfaceData();
-        this._calculateSpeeds();
-
-        // No need to update text for hidden labels
-        if (this._showSpeedDown) this._downLabel.set_text(
-            this._formatSpeed(this._speedDown) + this._speedDownDecoration);
-        if (this._showSpeedUp) this._upLabel.set_text(
-            this._formatSpeed(this._speedUp) + this._speedUpDecoration);
-        if (this._showSpeedTotal) this._totalLabel.set_text(
-            this._formatSpeed(this._speedTotal) + this._speedTotalDecoration);
-        if (this._showUsageTotal) this._usageLabel.set_text(
-            this._formatSpeed(this._usageTotal) + this._usageTotalDecoration);
+        this._updateSpeeds();
+        this._updateLabelText();
 
         if (this._runNum > this._currentRunNum){
             this._currentRunNum = this._runNum;
@@ -202,7 +164,7 @@ NetSpeedExtension.prototype = {
         } else return this._isRunning;
     },
 
-    _updateInterfaceData() {
+    _updateInterfaceData: function () {
         let fileContentsRaw = GLib.file_get_contents('/proc/net/dev');
         let fileContents = fileContentsRaw[1].toString().split('\n');
         for (let i = 2; i < fileContents.length; i++) { // i = 2 skips headers
@@ -227,6 +189,47 @@ NetSpeedExtension.prototype = {
                 interfaceData.totalTransmitted = lineData[9];
             }
         }
+    },
+
+    _updateLabelText: function() {
+        // No need to update text for hidden labels
+        if (this._showSpeedDown) this._downLabel.set_text(
+            this._formatSpeed(this._speedDown) + this._speedDownDecoration);
+        if (this._showSpeedUp) this._upLabel.set_text(
+            this._formatSpeed(this._speedUp) + this._speedUpDecoration);
+        if (this._showSpeedTotal) this._totalLabel.set_text(
+            this._formatSpeed(this._speedTotal) + this._speedTotalDecoration);
+        if (this._showUsageTotal) this._usageLabel.set_text(
+            this._formatSpeed(this._usageTotal) + this._usageTotalDecoration);
+    },
+
+    _updateSpeeds: function () {
+        let speedDown = speedUp = speedTotal = usageTotal = 0;
+        for (let i = 0; i < this._trackedInterfaces.length; i++) {
+            let interfaceName = this._trackedInterfaces[i];
+            let interfaceIndex = this._interfaceNames.indexOf(interfaceName);
+            if (interfaceIndex < 0) continue; // This shouldn't happen
+            let interfaceData = this._interfaceData[interfaceIndex];
+            let justReceived =
+                interfaceData.totalReceived - interfaceData.lastReceived;
+            let justTransmitted =
+                interfaceData.totalTransmitted - interfaceData.lastTransmitted;
+            speedDown += justReceived;
+            speedUp += justTransmitted;
+            speedTotal += (justReceived + justTransmitted)
+
+            let totalDown =
+                interfaceData.totalReceived - interfaceData.initialReceived;
+            let totalUp =
+                interfaceData.totalTransmitted -
+                    interfaceData.initialTransmitted;
+            usageTotal += (totalDown + totalUp);
+
+        }
+        this._speedDown = speedDown / this._updateInterval;
+        this._speedUp = speedUp / this._updateInterval;
+        this._speedTotal = speedTotal / this._updateInterval;
+        this._usageTotal = usageTotal;
     },
 
     _onButtonClicked: function (button, event) {
