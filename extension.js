@@ -323,23 +323,27 @@ NetSpeedExtension.prototype = {
                 this._trackedInterfaces = this._settings.get_strv('interfaces');
                 break;
             case 'show-speed-down':
-                if (this._settings.get_boolean('show-speed-down'))
-                    this._downLabel.show()
+                this._showSpeedDown =
+                    this._settings.get_boolean('show-speed-down')
+                if (this._showSpeedDown) this._downLabel.show()
                 else this._downLabel.hide();
                 break;
             case 'show-speed-total':
-                if (this._settings.get_boolean('show-speed-total'))
-                    this._totalLabel.show()
+                this._showSpeedTotal =
+                    this._settings.get_boolean('show-speed-total')
+                if (this._showSpeedTotal) this._totalLabel.show()
                 else this._totalLabel.hide();
                 break;
             case 'show-speed-up':
-                if (this._settings.get_boolean('show-speed-up'))
-                    this._upLabel.show()
+                this._showSpeedUp =
+                    this._settings.get_boolean('show-speed-up')
+                if (this._showSpeedUp) this._upLabel.show()
                 else this._upLabel.hide();
                 break;
             case 'show-usage-total':
-                if (this._settings.get_boolean('show-usage-total'))
-                    this._usageLabel.show()
+                this._showUsageTotal =
+                    this._settings.get_boolean('show-usage-total')
+                if (this._showUsageTotal) this._usageLabel.show()
                 else this._usageLabel.hide();
                 break;
             case 'update-interval':
