@@ -102,8 +102,7 @@ NetSpeedExtension.prototype = {
         let upTime = parseInt(fileContents[0]);
         let date = new Date()
         let timeNow = parseInt(parseInt(date.getTime()) / 1000);
-        let bootTime = (timeNow - upTime)
-        return bootTime;
+        return (timeNow - upTime);
     },
 
     _updateInterfaceData() {
@@ -481,7 +480,6 @@ NetSpeedExtension.prototype = {
         this._speedTotal = 0;
         this._usageTotal = 0;
 
-        // New
         this._interfaceNames = []
         this._interfaceData = []
 
@@ -499,25 +497,39 @@ NetSpeedExtension.prototype = {
              * manually reset and the speed values will correct next update. If
              * they are not of the same length though...
              */
-            // Test for equal lengths first?
             let initialReceivedValues =
               this._settings.get_strv('initial-receive-counts');
             let initialTransmittedValues =
               this._settings.get_strv('initial-transmit-counts');
 
+            // This won't work with different lengths, so give up.
+            if (!initialReceivedValues.length ==
+                    initialTransmittedValues.length ==
+                            this._trackedInterfaces.length) {
+                this._debugLabel.set_text(initialReceivedValues.length.toString() +
+                    "/" + initialTransmittedValues.length.toString() +
+                        "/" + this._trackedInterfaces.length.toString());
+                Main.panel._rightBox.insert_child_at_index(this._button, 0);
+                this._update();
+                return;
+            }
+
+            this._updateInterfaceData();
+
             for (let i = 0; i < this._trackedInterfaces.length; i++) {
                 let name = this._trackedInterfaces[i];
-                this._interfaceNames.push(name);
-                let interfaceData = new InterfaceData();
-                interfaceData.initialReceived =
-                    interfaceData.totalReceived =
-                        interfaceData.lastReceived =
-                            parseInt(initialReceivedValues[i]);
-                interfaceData.initialTransmitted =
-                    interfaceData.totalTransmitted =
-                        interfaceData.lastTransmitted =
-                            parseInt(initialTransmittedValues[i]);
-                this._interfaceData.push(interfaceData);
+                let index = this._interfaceNames.indexOf(name);
+                let interfaceData = this._interfaceData[index];
+
+                let initialReceived =  parseInt(initialReceivedValues[i]);
+                let initialTransmitted = parseInt(initialTransmittedValues[i]);
+
+                // Only set new initial values if they are older
+                if (initialReceived > interfaceData.initialReceived &&
+                        initialTransmitted > interfaceData.initialTransmitted) {
+                    interfaceData.initialReceived = initialReceived;
+                    interfaceData.initialTransmitted = initialTransmitted;
+                }
             }
         }
 
