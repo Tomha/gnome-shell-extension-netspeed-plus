@@ -250,6 +250,11 @@ NetSpeedExtension.prototype = {
                 this._customFixedWidth =
                     this._settings.get_int('custom-fixed-width');
                 this._setAllLabelStyles();
+                this._downLabel.set_text('');
+                this._upLabel.set_text('');
+                this._totalLabel.set_text('');
+                this._usageLabel.set_text('');
+                this._updateLabelText();
                 break;
             case 'custom-font-family':
                 this._customFontFamily =
