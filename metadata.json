@@ -1,6 +1,7 @@
 {
-	"description": "Display network throughput in the panel.",
-	"licence": "GNU General Public License v3.0",
+	"description": "Highly customisable display of network throughput and usage for the Gnome Shell panel.",
+	"licence": "GNU General Public License, Version 3",
+	"licence-url": "https://www.gnu.org/licenses/gpl-3.0.html",
 	"name": "NetSpeed",
 	"settings-schema": "org.gnome.shell.extensions.netspeed",
 	"shell-version": ["3.22", "3.24"],

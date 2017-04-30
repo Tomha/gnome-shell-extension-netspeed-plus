@@ -92,10 +92,16 @@ NetSpeedPrefs.prototype = {
         version.set_text(Me.metadata['version'].toString());
 
         let website = this._builder.get_object('websiteLabel');
-        website.set_text(Me.metadata['url'].toString());
+        website.set_markup('<a href="' + Me.metadata['url'].toString() + '">' +
+           Me.metadata['name'].toString() + '</a>');
 
         let licence = this._builder.get_object('licenceLabel');
-        licence.set_text(Me.metadata['licence'].toString());
+        licence.set_markup('<span font="10">' +
+            'This extension comes with absolutely no warranty.\n' +
+            'See the <a href="' +
+            Me.metadata['licence-url'].toString() + '">' +
+            Me.metadata['licence'].toString() + '</a>' +
+            ' or later for details.</span>');
     },
 
     _populateAppearance: function () {
