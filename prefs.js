@@ -32,8 +32,7 @@ function getInterfaces () {
     try {
         let fileContentsRaw = GLib.file_get_contents('/proc/net/dev');
         let fileContents = fileContentsRaw[1].toString().split('\n');
-        // Skip the first 2 header lines:
-        for (let i = 2; i < fileContents.length; i++) {
+        for (let i = 2; i < fileContents.length; i++) {  // i = 2 skips headers
             let lineData = fileContents[i].trim().split(/\W+/);
             let interfaceName = lineData[0];
             if (interfaceName) interfaces.push(interfaceName);
@@ -77,8 +76,7 @@ NetSpeedPrefs.prototype = {
         this._populateAppearance();
         this._populateAbout();
 
-        this._builder.connect_signals_full(
-            Lang.bind(this, this._signalConnector));
+        this._builder.connect_signals_full(Lang.bind(this, this._signalConnector));
     },
 
     _populateAbout: function () {
@@ -129,8 +127,7 @@ NetSpeedPrefs.prototype = {
         let fontFamilyOptions = [];
         let fontFamilyModel = widget.get_model();
         fontFamilyModel.foreach(function (model, path, iter) {
-            fontFamilyOptions.push(
-                fontFamilyModel.get_value(iter, 0).toString());
+            fontFamilyOptions.push(fontFamilyModel.get_value(iter, 0).toString());
         });
         let valueIndex = fontFamilyOptions.indexOf(value);
         if ( valueIndex >= 0) widget.set_active(valueIndex);
@@ -190,8 +187,6 @@ NetSpeedPrefs.prototype = {
         value = this._settings.get_boolean('show-usage-total');
         widget.set_active(value);
 
-
-
         // Speed Down Colour
         widget = this._builder.get_object('speedDownColour');
         value = this._settings.get_string('custom-speed-down-colour');
@@ -239,12 +234,12 @@ NetSpeedPrefs.prototype = {
 
         widget = this._builder.get_object('updateInterval');
         value = this._settings.get_int('update-interval');
-        widget.set_value(value)
+        widget.set_value(value);
 
         widget = this._builder.get_object('interfaceFlowBox');
         let savedInterfaces = this._settings.get_strv('interfaces');
         let currentInterfaces = getInterfaces();
-        let displayInterfaces = savedInterfaces.slice()
+        let displayInterfaces = savedInterfaces.slice();
         for (let i = 0; i < currentInterfaces.length; i++) {
             if (displayInterfaces.indexOf(currentInterfaces[i]) < 0) {
                 displayInterfaces.push(currentInterfaces[i]);
@@ -257,12 +252,9 @@ NetSpeedPrefs.prototype = {
         for (let i = 0; i < displayInterfaces.length; i++) {
             let checkbox = new Gtk.CheckButton();
             checkbox.set_label(displayInterfaces[i])
-            if (savedInterfaces.indexOf(displayInterfaces[i]) >= 0) {
+            if (savedInterfaces.indexOf(displayInterfaces[i]) >= 0)
                 checkbox.set_active(true);
-            }
-            checkbox.connect('toggled',
-                Lang.bind(this,
-                          this._signalHandler['interfaceSelectionChanged']));
+            checkbox.connect('toggled', Lang.bind(this, this._signalHandler['interfaceSelectionChanged']));
             this._interfaceCheckBoxes.push(checkbox);
             widget.insert(checkbox, -1);
         }
@@ -283,8 +275,7 @@ NetSpeedPrefs.prototype = {
             let interfaceList = [];
             for(let i = 0; i < this._interfaceCheckBoxes.length; i++) {
                 if (this._interfaceCheckBoxes[i].get_active())
-                    interfaceList.push(
-                        this._interfaceCheckBoxes[i].get_label());
+                    interfaceList.push(this._interfaceCheckBoxes[i].get_label());
             }
             this._settings.set_strv('interfaces', interfaceList);
             this._settings.apply();
@@ -327,7 +318,7 @@ NetSpeedPrefs.prototype = {
 
         customWidthChanged: function (scale) {
             let value = scale.get_value();
-            this._settings.set_int('custom-fixed-width', value)
+            this._settings.set_int('custom-fixed-width', value);
             this._settings.apply();
         },
 

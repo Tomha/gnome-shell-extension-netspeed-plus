@@ -27,20 +27,17 @@ function getSettings () {
     let schema = extension.metadata['settings-schema'];
 
     let schemaDir = extension.dir.get_child('schema');
-    if (!schemaDir.query_exists(null)) {
-        throw new Error ("Schema directory " + schemaDir + " for " +
-                         extension.metadata.uuid + " not found.");
-    }
+    if (!schemaDir.query_exists(null))
+        throw new Error ("Schema directory " + schemaDir + " for " + extension.metadata.uuid + " not found.");
 
     let schemaSrc = SchemaSource.new_from_directory(schemaDir.get_path(),
                                                     SchemaSource.get_default(),
                                                     false);
 
     let schemaObj = schemaSrc.lookup(schema, true);
-    if (!schemaObj) {
-        throw new Error ("Schema " + schemaDir + " for " +
-                         extension.metadata.uuid + " not found.");
-    }
+    if (!schemaObj)
+        throw new Error ("Schema " + schemaDir + " for " + extension.metadata.uuid + " not found.");
 
     return new Gio.Settings({ settings_schema: schemaObj });
 }
+
