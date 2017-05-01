@@ -224,7 +224,7 @@ NetSpeedExtension.prototype = {
     _onSettingsChanged: function (settings, key) {
         switch(key) {
             case 'custom-fixed-width':
-                this._customFixedWidth = this._settings.get_int('custom-fixed-width');
+                this._customFixedWidth = settings.get_int('custom-fixed-width');
                 this._setAllLabelStyles();
                 this._downLabel.set_text('');
                 this._upLabel.set_text('');
@@ -233,98 +233,98 @@ NetSpeedExtension.prototype = {
                 this._updateLabelText();
                 break;
             case 'custom-font-family':
-                this._customFontFamily = this._settings.get_string('custom-font-family');
+                this._customFontFamily = settings.get_string('custom-font-family');
                 this._setAllLabelStyles();
                 break;
             case 'custom-font-size':
-                this._customFontSize = this._settings.get_int('custom-font-size');
+                this._customFontSize = settings.get_int('custom-font-size');
                 this._setAllLabelStyles();
                 break;
             case 'custom-speed-down-colour':
-                this._customSpeedDownColour = this._settings.get_string('custom-speed-down-colour');
+                this._customSpeedDownColour = tsettings.get_string('custom-speed-down-colour');
                 this._downLabel.set_style(this._createLabelStyle('down'));
                 break;
             case 'custom-speed-down-decoration':
                 this._speedDownDecoration = this._useCustomDecorations ?
-                    this._settings.get_string('custom-speed-down-decoration') :
+                    settings.get_string('custom-speed-down-decoration') :
                     '↓';
                 this._setAllLabelStyles();
                 break;
             case 'custom-speed-total-colour':
-                this._customSpeedTotalColour = this._settings.get_string('custom-speed-total-colour');
+                this._customSpeedTotalColour = settings.get_string('custom-speed-total-colour');
                 this._totalLabel.set_style(this._createLabelStyle('total'));
                 break;
             case 'custom-speed-total-decoration':
                 this._speedTotalDecoration = this._useCustomDecorations ?
-                    this._settings.get_string('custom-speed-total-decoration') :
+                    settings.get_string('custom-speed-total-decoration') :
                     '⇵';
                 this._setAllLabelStyles();
                 break;
             case 'custom-speed-up-colour':
-                this._customSpeedUpColour = this._settings.get_string('custom-speed-up-colour');
+                this._customSpeedUpColour = settings.get_string('custom-speed-up-colour');
                 this._upLabel.set_style(this._createLabelStyle('up'));
                 break;
             case 'custom-speed-up-decoration':
                 this._speedUpDecoration = this._useCustomDecorations ?
-                    this._settings.get_string('custom-speed-up-decoration') :
+                    settings.get_string('custom-speed-up-decoration') :
                     '↑';
                 this._setAllLabelStyles();
                 break;
             case 'custom-usage-total-colour':
-                this._customUsageTotalColour = this._settings.get_string('custom-usage-total-colour');
+                this._customUsageTotalColour = settings.get_string('custom-usage-total-colour');
                 this._usageLabel.set_style(this._createLabelStyle('usage'));
                 break;
             case 'custom-usage-total-decoration':
                 this._usageTotalDecoration = this._useCustomDecorations ?
-                    this._settings.get_string('custom-usage-total-decoration') :
+                    settings.get_string('custom-usage-total-decoration') :
                     'Σ';
                 this._setAllLabelStyles();
                 break;
             case 'decimal-place':
-                this._decimalPlace = this._settings.get_int('decimal-place');
+                this._decimalPlace = settings.get_int('decimal-place');
                 break;
             case 'display-vertical':
-                this._displayVertical = this._settings.get_boolean('display-vertical');
+                this._displayVertical = settings.get_boolean('display-vertical');
                 this._labelBox.set_vertical(this._displayVertical);
                 break;
             case 'interfaces':
-                this._trackedInterfaces = this._settings.get_strv('interfaces');
+                this._trackedInterfaces = settings.get_strv('interfaces');
                 break;
             case 'show-speed-down':
-                this._showSpeedDown = this._settings.get_boolean('show-speed-down')
+                this._showSpeedDown = settings.get_boolean('show-speed-down')
                 if (this._showSpeedDown) this._downLabel.show()
                 else this._downLabel.hide();
                 break;
             case 'show-speed-total':
-                this._showSpeedTotal = this._settings.get_boolean('show-speed-total')
+                this._showSpeedTotal = settings.get_boolean('show-speed-total')
                 if (this._showSpeedTotal) this._totalLabel.show()
                 else this._totalLabel.hide();
                 break;
             case 'show-speed-up':
-                this._showSpeedUp = this._settings.get_boolean('show-speed-up')
+                this._showSpeedUp = settings.get_boolean('show-speed-up')
                 if (this._showSpeedUp) this._upLabel.show()
                 else this._upLabel.hide();
                 break;
             case 'show-usage-total':
-                this._showUsageTotal = this._settings.get_boolean('show-usage-total')
+                this._showUsageTotal = settings.get_boolean('show-usage-total')
                 if (this._showUsageTotal) this._usageLabel.show()
                 else this._usageLabel.hide();
                 break;
             case 'update-interval':
-                this._updateInterval = this._settings.get_int('update-interval');
+                this._updateInterval = settings.get_int('update-interval');
                 this._runNum++;
                 break;
             case 'use-custom-font-colours':
-                this._useCustomFontColours = this._settings.get_boolean('use-custom-font-colours');
+                this._useCustomFontColours = settings.get_boolean('use-custom-font-colours');
                 this._setAllLabelStyles();
                 break;
             case 'use-custom-decorations':
-                this._useCustomDecorations = this._settings.get_boolean('use-custom-decorations');
+                this._useCustomDecorations = settings.get_boolean('use-custom-decorations');
                 if (this._useCustomDecorations) {
-                    this._speedDownDecoration = this._settings.get_string('custom-speed-down-decoration');
-                    this._speedUpDecoration = this._settings.get_string('custom-speed-up-decoration');
-                    this._speedTotalDecoration = this._settings.get_string('custom-speed-total-decoration');
-                    this._usageTotalDecoration = this._settings.get_string('custom-usage-total-decoration');
+                    this._speedDownDecoration = settings.get_string('custom-speed-down-decoration');
+                    this._speedUpDecoration = settings.get_string('custom-speed-up-decoration');
+                    this._speedTotalDecoration = settings.get_string('custom-speed-total-decoration');
+                    this._usageTotalDecoration = settings.get_string('custom-usage-total-decoration');
                 } else {
                     this._speedDownDecoration =  '↓';
                     this._speedUpDecoration = '↑';
@@ -334,19 +334,19 @@ NetSpeedExtension.prototype = {
                 this._setAllLabelStyles();
                 break;
             case 'use-custom-font-family':
-                this._useCustomFontFamily = this._settings.get_boolean('use-custom-font-family');
+                this._useCustomFontFamily = settings.get_boolean('use-custom-font-family');
                 this._setAllLabelStyles();
                 break;
             case 'use-custom-font-size':
-                this._useCustomFontSize = this._settings.get_boolean('use-custom-font-size');
+                this._useCustomFontSize = settings.get_boolean('use-custom-font-size');
                 this._setAllLabelStyles();
                 break;
             case 'use-fixed-width':
-                this._useFixedWidth = this._settings.get_boolean('use-fixed-width');
+                this._useFixedWidth = settings.get_boolean('use-fixed-width');
                 this._setAllLabelStyles();
                 break;
             case 'width-is-minimum':
-                this._widthIsMinimum = this._settings.get_boolean('width-is-minimum');
+                this._widthIsMinimum = settings.get_boolean('width-is-minimum');
                 this._setAllLabelStyles();
                 break;
         }
