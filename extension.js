@@ -27,8 +27,6 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Settings = Me.imports.settings;
 
-const showDebug = false;
-
 function InterfaceData() {
     this._init();
 }
@@ -147,8 +145,6 @@ NetSpeedExtension.prototype = {
         this._upLabel.set_style(this._createLabelStyle('up'));
         this._totalLabel.set_style(this._createLabelStyle('total'));
         this._usageLabel.set_style(this._createLabelStyle('usage'));
-        if (showDebug)
-            this._debugLabel.set_style(this._createLabelStyle(null));
     },
 
     _update: function () {
@@ -403,9 +399,16 @@ NetSpeedExtension.prototype = {
         }
     },
 
-    _init: function () {
-        this._isRunning = false;
-        this._runNum = 0;
+    _init: function () { },
+
+    enable: function () {
+        this._settings = Settings.getSettings();
+        this._settingsSignal = this._settings.connect('changed',
+                               Lang.bind(this, this._onSettingsChanged));
+        this._loadSettings();
+
+        this._isRunning = true;
+        this._runNum = 1;
         this._currentRunNum = 0;
 
         this._labelBox = new St.BoxLayout();
@@ -417,41 +420,18 @@ NetSpeedExtension.prototype = {
                                    track_hover: true,
                                    child: this._labelBox})
 
-        this._downLabel = new St.Label();
-        this._labelBox.add_child(this._downLabel);
-        this._downLabel.hide();
-
-        this._upLabel = new St.Label();
-        this._labelBox.add_child(this._upLabel);
-        this._upLabel.hide();
-
-        this._totalLabel = new St.Label();
-        this._labelBox.add_child(this._totalLabel);
-        this._totalLabel.hide();
-
-        this._usageLabel = new St.Label();
-        this._labelBox.add_child(this._usageLabel);
-        this._usageLabel.hide();
-
-        if (showDebug) {
-            this._debugLabel = new St.Label();
-            this._labelBox.add_child(this._debugLabel);
-            this._debugLabel.hide();
-        }
-
-        this._button.connect('button-press-event',
+        this._buttonSignal = this._button.connect('button-press-event',
                              Lang.bind(this, this._onButtonClicked));
-    },
 
-    enable: function () {
-        this._settings = Settings.getSettings();
-        this._settings.connect('changed',
-                               Lang.bind(this, this._onSettingsChanged));
-        this._loadSettings();
+        this._downLabel = new St.Label();
+        this._upLabel = new St.Label();
+        this._totalLabel = new St.Label();
+        this._usageLabel = new St.Label();
 
-        this._isRunning = true;
-        this._runNum = 1;
-        this._currentRunNum = 0;
+        this._labelBox.add_child(this._downLabel);
+        this._labelBox.add_child(this._upLabel);
+        this._labelBox.add_child(this._totalLabel);
+        this._labelBox.add_child(this._usageLabel);
 
         this._speedDownDecoration = this._useCustomDecorations ?
             this._customSpeedDownDecoration : '↓';
@@ -464,15 +444,10 @@ NetSpeedExtension.prototype = {
 
         this._setAllLabelStyles();
 
-        if (this._showSpeedDown) this._downLabel.show();
-        if (this._showSpeedUp) this._upLabel.show();
-        if (this._showSpeedTotal) this._totalLabel.show();
-        if (this._showUsageTotal) this._usageLabel.show();
-
-        if (showDebug) {
-            this._debugLabel.set_text("DEBUG");
-            this._debugLabel.show();
-        }
+        this._showSpeedDown ? this._downLabel.show() : this._downLabel.hide();
+        this._showSpeedUp ? this._upLabel.show() : this._upLabel.hide();
+        this._showSpeedTotal ? this._totalLabel.show() : this._totalLabel.hide();
+        this._showUsageTotal ? this._usageLabel.show() : this._usageLabel.hide();
 
         this._labelBox.set_vertical(this._displayVertical);
 
@@ -532,6 +507,18 @@ NetSpeedExtension.prototype = {
     disable: function () {
         this._isRunning = false;
 
+        this._settings.disconnect(this._settingsSignal);
+        this._button.disconnect(this._buttonSignal);
+
+        Main.panel._rightBox.remove_child(this._button);
+
+        this._downLabel.destroy();
+        this._upLabel.destroy();
+        this._totalLabel.destroy();
+        this._usageLabel.destroy();
+        this._button.destroy();
+        this._labelBox.destroy();
+
         let initialReceivedValues = [];
         let initialTransmittedValues = [];
         for (let i = 0; i < this._trackedInterfaces.length; i++) {
@@ -548,8 +535,6 @@ NetSpeedExtension.prototype = {
         this._settings.set_strv('initial-transmit-counts',
                                 initialTransmittedValues);
         this._settings.apply();
-
-        Main.panel._rightBox.remove_child(this._button);
     }
 };
 
