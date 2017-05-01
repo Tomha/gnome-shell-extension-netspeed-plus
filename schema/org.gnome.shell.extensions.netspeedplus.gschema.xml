@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist gettext-domain="gnome-shell-extensions">
-    <schema path="/org/gnome/shell/extensions/netspeed/" id="org.gnome.shell.extensions.netspeed">
+    <schema path="/org/gnome/shell/extensions/netspeedplus/" id="org.gnome.shell.extensions.netspeedplus">
 	<key name="interfaces" type="as">
-            <default>["eno1", "wlp12s0b1", "enp13s0"]</default>
+            <default>[]</default>
             <summary>Interfaces to monitor.</summary>
             <description>A list of interface names to track statistics on.</description>
         </key>

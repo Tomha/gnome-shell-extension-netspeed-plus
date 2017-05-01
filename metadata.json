@@ -2,10 +2,10 @@
 	"description": "Highly customisable display of network throughput and usage for the Gnome Shell panel.",
 	"licence": "GNU General Public License, Version 3",
 	"licence-url": "https://www.gnu.org/licenses/gpl-3.0.html",
-	"name": "NetSpeed",
-	"settings-schema": "org.gnome.shell.extensions.netspeed",
+	"name": "NetSpeed Plus",
+	"settings-schema": "org.gnome.shell.extensions.netspeedplus",
 	"shell-version": ["3.22", "3.24"],
-	"url": "https://github.com/Tomha/gnome-shell-extension-netspeed",
-	"uuid": "netspeed@tomha.github.com",
+	"url": "https://github.com/Tomha/gnome-shell-extension-netspeed-plus",
+	"uuid": "netspeed-plus@tomha.github.com",
 	"version": 1.1
 }

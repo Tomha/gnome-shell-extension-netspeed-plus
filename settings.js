@@ -1,21 +1,21 @@
 /* Copyright (C) 2017 Tom Hartill
 
-settings.js - Part of the NetSpeed Gnome Shell Extension.
+settings.js - Part of the NetSpeed Plus Gnome Shell Extension.
 
-NetSpeed is free software; you can redistribute it and/or modify it under the
-terms of the GNU General Public License as published by the Free Software
+NetSpeed Plus is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
 Foundation; either version 3 of the License, or (at your option) any later
 version.
 
-NetSpeed is distributed in the hope that it will be useful, but WITHOUT ANY
+NetSpeed Plus is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
 A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-NetSpeed; if not, see http://www.gnu.org/licenses/.
+NetSpeed Plus; if not, see http://www.gnu.org/licenses/.
 
 An up to date version can also be found at:
-https://github.com/Tomha/gnome-shell-extension-netspeed */
+https://github.com/Tomha/gnome-shell-extension-netspeed-plus */
 
 const Gio = imports.gi.Gio;
 const SchemaSource = imports.gi.Gio.SettingsSchemaSource;
