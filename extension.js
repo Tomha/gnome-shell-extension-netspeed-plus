@@ -58,13 +58,10 @@ NetSpeedExtension.prototype = {
                                 this._customUsageTotalColour];
             let labelIndex = labelNames.indexOf(labelName);
             if (labelIndex < 0) throw new Error ("Invalid label name.");
-            else if (this._useCustomFontColours) styleText +=
-                ('color:' + labelColours[labelIndex] + ';');
+            else if (this._useCustomFontColours) styleText += ('color:' + labelColours[labelIndex] + ';');
         }
-        if (this._useCustomFontFamily) styleText +=
-            ('font-family:' + this._customFontFamily + ';');
-        if (this._useCustomFontSize > 0) styleText +=
-            ('font-size:' + this._customFontSize + 'pt;');
+        if (this._useCustomFontFamily) styleText += ('font-family:' + this._customFontFamily + ';');
+        if (this._useCustomFontSize > 0) styleText += ('font-size:' + this._customFontSize + 'pt;');
         if (this._useFixedWidth) {
             styleText += this._widthIsMinimum ? 'min-width:' : 'width:';
             styleText += this._customFixedWidth + 'px;';
@@ -97,27 +94,17 @@ NetSpeedExtension.prototype = {
     },
 
     _loadSettings: function() {
-        this._customFixedWidth =
-            this._settings.get_int('custom-fixed-width');
-        this._customFontFamily =
-            this._settings.get_string('custom-font-family');
+        this._customFixedWidth = this._settings.get_int('custom-fixed-width');
+        this._customFontFamily = this._settings.get_string('custom-font-family');
         this._customFontSize = this._settings.get_int('custom-font-size');
-        this._customSpeedDownColour =
-            this._settings.get_string('custom-speed-down-colour');
-        this._customSpeedDownDecoration =
-            this._settings.get_string('custom-speed-down-decoration');
-        this._customSpeedTotalColour =
-            this._settings.get_string('custom-speed-total-colour');
-        this._customSpeedTotalDecoration =
-            this._settings.get_string('custom-speed-total-decoration');
-        this._customSpeedUpColour =
-            this._settings.get_string('custom-speed-up-colour');
-        this._customSpeedUpDecoration =
-            this._settings.get_string('custom-speed-up-decoration');
-        this._customUsageTotalColour =
-            this._settings.get_string('custom-usage-total-colour');
-        this._customUsageTotalDecoration =
-            this._settings.get_string('custom-usage-total-decoration');
+        this._customSpeedDownColour =  this._settings.get_string('custom-speed-down-colour');
+        this._customSpeedDownDecoration = this._settings.get_string('custom-speed-down-decoration');
+        this._customSpeedTotalColour = this._settings.get_string('custom-speed-total-colour');
+        this._customSpeedTotalDecoration = this._settings.get_string('custom-speed-total-decoration');
+        this._customSpeedUpColour = this._settings.get_string('custom-speed-up-colour');
+        this._customSpeedUpDecoration = this._settings.get_string('custom-speed-up-decoration');
+        this._customUsageTotalColour = this._settings.get_string('custom-usage-total-colour');
+        this._customUsageTotalDecoration = this._settings.get_string('custom-usage-total-decoration');
         this._decimalPlace = this._settings.get_int('decimal-place');
         this._displayVertical = this._settings.get_boolean('display-vertical');
         this._trackedInterfaces = this._settings.get_strv('interfaces');
@@ -126,18 +113,12 @@ NetSpeedExtension.prototype = {
         this._showSpeedUp = this._settings.get_boolean('show-speed-up');
         this._showUsageTotal =this._settings.get_boolean('show-usage-total');
         this._updateInterval= this._settings.get_int('update-interval');
-        this._useCustomDecorations =
-            this._settings.get_boolean('use-custom-decorations');
-        this._useCustomFontColours =
-            this._settings.get_boolean('use-custom-font-colours');
-        this._useCustomFontFamily =
-            this._settings.get_boolean('use-custom-font-family');
-        this._useCustomFontSize =
-            this._settings.get_boolean('use-custom-font-size');
-        this._useFixedWidth =
-            this._settings.get_boolean('use-fixed-width');
-        this._widthIsMinimum =
-            this._settings.get_boolean('width-is-minimum');
+        this._useCustomDecorations = this._settings.get_boolean('use-custom-decorations');
+        this._useCustomFontColours = this._settings.get_boolean('use-custom-font-colours');
+        this._useCustomFontFamily = this._settings.get_boolean('use-custom-font-family');
+        this._useCustomFontSize = this._settings.get_boolean('use-custom-font-size');
+        this._useFixedWidth = this._settings.get_boolean('use-fixed-width');
+        this._widthIsMinimum = this._settings.get_boolean('width-is-minimum');
     },
 
     _setAllLabelStyles: function () {
@@ -154,8 +135,7 @@ NetSpeedExtension.prototype = {
 
         if (this._runNum > this._currentRunNum){
             this._currentRunNum = this._runNum;
-            Main.Mainloop.timeout_add_seconds(this._updateInterval,
-                                  Lang.bind(this, this._update));
+            Main.Mainloop.timeout_add_seconds(this._updateInterval, Lang.bind(this, this._update));
             return false;
         } else return this._isRunning;
     },
@@ -169,12 +149,12 @@ NetSpeedExtension.prototype = {
             let interfaceIndex = this._interfaceNames.indexOf(interfaceName);
             if (interfaceIndex < 0) {
                 let interfaceData = new InterfaceData();
-                interfaceData.initialReceived =
-                    interfaceData.totalReceived =
-                        interfaceData.lastReceived = 0;
-                interfaceData.initialTransmitted =
-                    interfaceData.totalTransmitted =
-                        interfaceData.lastTransmitted = 0;
+                interfaceData.initialReceived = 0;
+                interfaceData.totalReceived = 0;
+                interfaceData.lastReceived = 0;
+                interfaceData.initialTransmitted = 0;
+                interfaceData.totalTransmitted = 0;
+                interfaceData.lastTransmitted = 0;
                 this._interfaceNames.push(interfaceName);
                 this._interfaceData.push(interfaceData);
             } else {
@@ -188,15 +168,22 @@ NetSpeedExtension.prototype = {
     },
 
     _updateLabelText: function() {
-        // No need to update text for hidden labels
-        if (this._showSpeedDown) this._downLabel.set_text(
-            this._formatSpeed(this._speedDown) + this._speedDownDecoration);
-        if (this._showSpeedUp) this._upLabel.set_text(
-            this._formatSpeed(this._speedUp) + this._speedUpDecoration);
-        if (this._showSpeedTotal) this._totalLabel.set_text(
-            this._formatSpeed(this._speedTotal) + this._speedTotalDecoration);
-        if (this._showUsageTotal) this._usageLabel.set_text(
-            this._formatSpeed(this._usageTotal) + this._usageTotalDecoration);
+        if (this._showSpeedDown) {
+            let speed = this._formatSpeed(this._speedDown);
+            this._downLabel.set_text(speed + this._speedDownDecoration);
+        }
+        if (this._showSpeedUp) {
+            let speed = this._formatSpeed(this._speedUp);
+            this._upLabel.set_text(speed + this._speedUpDecoration);
+        }
+        if (this._showSpeedTotal) {
+            let speed = this._formatSpeed(this._speedTotal);
+            this._totalLabel.set_text(speed + this._speedTotalDecoration);
+        }
+        if (this._showUsageTotal) {
+            let usage = this._formatSpeed(this._usageTotal);
+            this._usageLabel.set_text(usage + this._usageTotalDecoration);
+        }
     },
 
     _updateSpeeds: function () {
@@ -206,21 +193,17 @@ NetSpeedExtension.prototype = {
             let interfaceIndex = this._interfaceNames.indexOf(interfaceName);
             if (interfaceIndex < 0) continue; // This shouldn't happen
             let interfaceData = this._interfaceData[interfaceIndex];
-            let justReceived =
-                interfaceData.totalReceived - interfaceData.lastReceived;
-            let justTransmitted =
-                interfaceData.totalTransmitted - interfaceData.lastTransmitted;
+            let justReceived = interfaceData.totalReceived - interfaceData.lastReceived;
+            let justTransmitted = interfaceData.totalTransmitted - interfaceData.lastTransmitted;
+
             speedDown += justReceived;
             speedUp += justTransmitted;
             speedTotal += (justReceived + justTransmitted)
 
-            let totalDown =
-                interfaceData.totalReceived - interfaceData.initialReceived;
-            let totalUp =
-                interfaceData.totalTransmitted -
-                    interfaceData.initialTransmitted;
-            usageTotal += (totalDown + totalUp);
+            let totalDown = interfaceData.totalReceived - interfaceData.initialReceived;
+            let totalUp = interfaceData.totalTransmitted - interfaceData.initialTransmitted;
 
+            usageTotal += (totalDown + totalUp);
         }
         this._speedDown = speedDown / this._updateInterval;
         this._speedUp = speedUp / this._updateInterval;
@@ -231,10 +214,8 @@ NetSpeedExtension.prototype = {
     _onButtonClicked: function (button, event) {
         if (event.get_button() == 3) {  // Clear counter on right click
             for(let i = 0; i < this._interfaceData.length; i++) {
-                this._interfaceData[i].initialReceived =
-                    this._interfaceData[i].totalReceived;
-                this._interfaceData[i].initialTransmitted =
-                    this._interfaceData[i].totalTransmitted;
+                this._interfaceData[i].initialReceived = this._interfaceData[i].totalReceived;
+                this._interfaceData[i].initialTransmitted = this._interfaceData[i].totalTransmitted;
             }
             this._usageLabel.set_text("0B" + this._usageTotalDecoration);
         }
@@ -243,8 +224,7 @@ NetSpeedExtension.prototype = {
     _onSettingsChanged: function (settings, key) {
         switch(key) {
             case 'custom-fixed-width':
-                this._customFixedWidth =
-                    this._settings.get_int('custom-fixed-width');
+                this._customFixedWidth = this._settings.get_int('custom-fixed-width');
                 this._setAllLabelStyles();
                 this._downLabel.set_text('');
                 this._upLabel.set_text('');
@@ -253,18 +233,15 @@ NetSpeedExtension.prototype = {
                 this._updateLabelText();
                 break;
             case 'custom-font-family':
-                this._customFontFamily =
-                    this._settings.get_string('custom-font-family');
+                this._customFontFamily = this._settings.get_string('custom-font-family');
                 this._setAllLabelStyles();
                 break;
             case 'custom-font-size':
-                this._customFontSize =
-                    this._settings.get_int('custom-font-size');
+                this._customFontSize = this._settings.get_int('custom-font-size');
                 this._setAllLabelStyles();
                 break;
             case 'custom-speed-down-colour':
-                this._customSpeedDownColour =
-                    this._settings.get_string('custom-speed-down-colour');
+                this._customSpeedDownColour = this._settings.get_string('custom-speed-down-colour');
                 this._downLabel.set_style(this._createLabelStyle('down'));
                 break;
             case 'custom-speed-down-decoration':
@@ -274,8 +251,7 @@ NetSpeedExtension.prototype = {
                 this._setAllLabelStyles();
                 break;
             case 'custom-speed-total-colour':
-                this._customSpeedTotalColour =
-                    this._settings.get_string('custom-speed-total-colour');
+                this._customSpeedTotalColour = this._settings.get_string('custom-speed-total-colour');
                 this._totalLabel.set_style(this._createLabelStyle('total'));
                 break;
             case 'custom-speed-total-decoration':
@@ -285,8 +261,7 @@ NetSpeedExtension.prototype = {
                 this._setAllLabelStyles();
                 break;
             case 'custom-speed-up-colour':
-                this._customSpeedUpColour =
-                    this._settings.get_string('custom-speed-up-colour');
+                this._customSpeedUpColour = this._settings.get_string('custom-speed-up-colour');
                 this._upLabel.set_style(this._createLabelStyle('up'));
                 break;
             case 'custom-speed-up-decoration':
@@ -296,8 +271,7 @@ NetSpeedExtension.prototype = {
                 this._setAllLabelStyles();
                 break;
             case 'custom-usage-total-colour':
-                this._customUsageTotalColour =
-                    this._settings.get_string('custom-usage-total-colour');
+                this._customUsageTotalColour = this._settings.get_string('custom-usage-total-colour');
                 this._usageLabel.set_style(this._createLabelStyle('usage'));
                 break;
             case 'custom-usage-total-decoration':
@@ -307,67 +281,50 @@ NetSpeedExtension.prototype = {
                 this._setAllLabelStyles();
                 break;
             case 'decimal-place':
-                this._decimalPlace =
-                    this._settings.get_int('decimal-place');
+                this._decimalPlace = this._settings.get_int('decimal-place');
                 break;
             case 'display-vertical':
-                this._displayVertical =
-                    this._settings.get_boolean('display-vertical');
+                this._displayVertical = this._settings.get_boolean('display-vertical');
                 this._labelBox.set_vertical(this._displayVertical);
                 break;
             case 'interfaces':
                 this._trackedInterfaces = this._settings.get_strv('interfaces');
                 break;
             case 'show-speed-down':
-                this._showSpeedDown =
-                    this._settings.get_boolean('show-speed-down')
+                this._showSpeedDown = this._settings.get_boolean('show-speed-down')
                 if (this._showSpeedDown) this._downLabel.show()
                 else this._downLabel.hide();
                 break;
             case 'show-speed-total':
-                this._showSpeedTotal =
-                    this._settings.get_boolean('show-speed-total')
+                this._showSpeedTotal = this._settings.get_boolean('show-speed-total')
                 if (this._showSpeedTotal) this._totalLabel.show()
                 else this._totalLabel.hide();
                 break;
             case 'show-speed-up':
-                this._showSpeedUp =
-                    this._settings.get_boolean('show-speed-up')
+                this._showSpeedUp = this._settings.get_boolean('show-speed-up')
                 if (this._showSpeedUp) this._upLabel.show()
                 else this._upLabel.hide();
                 break;
             case 'show-usage-total':
-                this._showUsageTotal =
-                    this._settings.get_boolean('show-usage-total')
+                this._showUsageTotal = this._settings.get_boolean('show-usage-total')
                 if (this._showUsageTotal) this._usageLabel.show()
                 else this._usageLabel.hide();
                 break;
             case 'update-interval':
-                this._updateInterval =
-                    this._settings.get_int('update-interval');
+                this._updateInterval = this._settings.get_int('update-interval');
                 this._runNum++;
                 break;
             case 'use-custom-font-colours':
-                this._useCustomFontColours =
-                    this._settings.get_boolean('use-custom-font-colours');
+                this._useCustomFontColours = this._settings.get_boolean('use-custom-font-colours');
                 this._setAllLabelStyles();
                 break;
             case 'use-custom-decorations':
-                this._useCustomDecorations =
-                    this._settings.get_boolean('use-custom-decorations');
+                this._useCustomDecorations = this._settings.get_boolean('use-custom-decorations');
                 if (this._useCustomDecorations) {
-                    this._speedDownDecoration =
-                        this._settings.get_string(
-                            'custom-speed-down-decoration');
-                    this._speedUpDecoration =
-                        this._settings.get_string(
-                            'custom-speed-up-decoration');
-                    this._speedTotalDecoration =
-                        this._settings.get_string(
-                            'custom-speed-total-decoration');
-                    this._usageTotalDecoration =
-                        this._settings.get_string(
-                            'custom-usage-total-decoration');
+                    this._speedDownDecoration = this._settings.get_string('custom-speed-down-decoration');
+                    this._speedUpDecoration = this._settings.get_string('custom-speed-up-decoration');
+                    this._speedTotalDecoration = this._settings.get_string('custom-speed-total-decoration');
+                    this._usageTotalDecoration = this._settings.get_string('custom-usage-total-decoration');
                 } else {
                     this._speedDownDecoration =  '↓';
                     this._speedUpDecoration = '↑';
@@ -377,23 +334,19 @@ NetSpeedExtension.prototype = {
                 this._setAllLabelStyles();
                 break;
             case 'use-custom-font-family':
-                this._useCustomFontFamily =
-                    this._settings.get_boolean('use-custom-font-family');
+                this._useCustomFontFamily = this._settings.get_boolean('use-custom-font-family');
                 this._setAllLabelStyles();
                 break;
             case 'use-custom-font-size':
-                this._useCustomFontSize =
-                    this._settings.get_boolean('use-custom-font-size');
+                this._useCustomFontSize = this._settings.get_boolean('use-custom-font-size');
                 this._setAllLabelStyles();
                 break;
             case 'use-fixed-width':
-                this._useFixedWidth =
-                    this._settings.get_boolean('use-fixed-width');
+                this._useFixedWidth = this._settings.get_boolean('use-fixed-width');
                 this._setAllLabelStyles();
                 break;
             case 'width-is-minimum':
-                this._widthIsMinimum =
-                    this._settings.get_boolean('width-is-minimum');
+                this._widthIsMinimum = this._settings.get_boolean('width-is-minimum');
                 this._setAllLabelStyles();
                 break;
         }
@@ -403,8 +356,8 @@ NetSpeedExtension.prototype = {
 
     enable: function () {
         this._settings = Settings.getSettings();
-        this._settingsSignal = this._settings.connect('changed',
-                               Lang.bind(this, this._onSettingsChanged));
+        this._settingsSignal = this._settings.connect('changed', Lang.bind(this, this._onSettingsChanged));
+
         this._loadSettings();
 
         this._isRunning = true;
@@ -420,8 +373,7 @@ NetSpeedExtension.prototype = {
                                    track_hover: true,
                                    child: this._labelBox})
 
-        this._buttonSignal = this._button.connect('button-press-event',
-                             Lang.bind(this, this._onButtonClicked));
+        this._buttonSignal = this._button.connect('button-press-event', Lang.bind(this, this._onButtonClicked));
 
         this._downLabel = new St.Label();
         this._upLabel = new St.Label();
@@ -433,14 +385,10 @@ NetSpeedExtension.prototype = {
         this._labelBox.add_child(this._totalLabel);
         this._labelBox.add_child(this._usageLabel);
 
-        this._speedDownDecoration = this._useCustomDecorations ?
-            this._customSpeedDownDecoration : '↓';
-        this._speedUpDecoration = this._useCustomDecorations ?
-            this._customSpeedUpDecoration : '↑';
-        this._speedTotalDecoration = this._useCustomDecorations ?
-            this._customSpeedTotalDecoration : '⇵';
-        this._usageTotalDecoration = this._useCustomDecorations ?
-            this._customUsageTotalDecoration : 'Σ';
+        this._speedDownDecoration = this._useCustomDecorations ? this._customSpeedDownDecoration : '↓';
+        this._speedUpDecoration = this._useCustomDecorations ? this._customSpeedUpDecoration : '↑';
+        this._speedTotalDecoration = this._useCustomDecorations ? this._customSpeedTotalDecoration : '⇵';
+        this._usageTotalDecoration = this._useCustomDecorations ? this._customUsageTotalDecoration : 'Σ';
 
         this._setAllLabelStyles();
 
@@ -467,15 +415,11 @@ NetSpeedExtension.prototype = {
             this._settings.set_int('last-boot-time', thisBootTime);
             this._settings.apply();
         } else {
-            let initialReceivedValues =
-              this._settings.get_strv('initial-receive-counts');
-            let initialTransmittedValues =
-              this._settings.get_strv('initial-transmit-counts');
+            let initialReceivedValues = this._settings.get_strv('initial-receive-counts');
+            let initialTransmittedValues = this._settings.get_strv('initial-transmit-counts');
 
             // This won't work with different lengths, so give up.
-            if (!initialReceivedValues.length ==
-                    initialTransmittedValues.length ==
-                            this._trackedInterfaces.length) {
+            if (!initialReceivedValues.length == initialTransmittedValues.length == this._trackedInterfaces.length) {
                 Main.panel._rightBox.insert_child_at_index(this._button, 0);
                 this._update();
                 return;
@@ -530,10 +474,8 @@ NetSpeedExtension.prototype = {
             initialReceivedValues.push(received.toString());
             initialTransmittedValues.push(transmitted.toString());
         }
-        this._settings.set_strv('initial-receive-counts',
-                                initialReceivedValues);
-        this._settings.set_strv('initial-transmit-counts',
-                                initialTransmittedValues);
+        this._settings.set_strv('initial-receive-counts', initialReceivedValues);
+        this._settings.set_strv('initial-transmit-counts', initialTransmittedValues);
         this._settings.apply();
     }
 };
