@@ -1,9 +1,7 @@
 # About
 NetSpeed Plus is (another) Gnome Shell extension providing a readout of your network throughput on the main panel. It was originally based off the stock NetSpeed plugin by [biji](https://github.com/biji/simplenetspeed) but has evolved to become focus on customisable appearance and monitoring. At a user-determined interval the contents of `/proc/net/dev` is read, and speed/usage statistics are calculated for the currently monitored interfaces.
 
-![Preview1](preview/Preview1.png)
-
-![Preview2](preview/Preview2.png)
+![Preview](preview/Preview.png)
 
 # Features
 NetSpeed Plus has a range of features not currently offered by other alternatives:
