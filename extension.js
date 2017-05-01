@@ -88,7 +88,7 @@ NetSpeedExtension.prototype = {
         let fileContentsRaw = GLib.file_get_contents('/proc/uptime');
         let fileContents = fileContentsRaw[1].toString().split(/\W+/);
         let upTime = parseInt(fileContents[0]);
-        let date = new Date()
+        let date = new Date();
         let timeNow = parseInt(parseInt(date.getTime()) / 1000);
         return (timeNow - upTime);
     },
@@ -198,7 +198,7 @@ NetSpeedExtension.prototype = {
 
             speedDown += justReceived;
             speedUp += justTransmitted;
-            speedTotal += (justReceived + justTransmitted)
+            speedTotal += (justReceived + justTransmitted);
 
             let totalDown = interfaceData.totalReceived - interfaceData.initialReceived;
             let totalUp = interfaceData.totalTransmitted - interfaceData.initialTransmitted;
@@ -246,8 +246,7 @@ NetSpeedExtension.prototype = {
                 break;
             case 'custom-speed-down-decoration':
                 this._speedDownDecoration = this._useCustomDecorations ?
-                    settings.get_string('custom-speed-down-decoration') :
-                    '↓';
+                    settings.get_string('custom-speed-down-decoration') : '↓';
                 this._setAllLabelStyles();
                 break;
             case 'custom-speed-total-colour':
@@ -256,8 +255,7 @@ NetSpeedExtension.prototype = {
                 break;
             case 'custom-speed-total-decoration':
                 this._speedTotalDecoration = this._useCustomDecorations ?
-                    settings.get_string('custom-speed-total-decoration') :
-                    '⇵';
+                    settings.get_string('custom-speed-total-decoration') : '⇵';
                 this._setAllLabelStyles();
                 break;
             case 'custom-speed-up-colour':
@@ -266,8 +264,7 @@ NetSpeedExtension.prototype = {
                 break;
             case 'custom-speed-up-decoration':
                 this._speedUpDecoration = this._useCustomDecorations ?
-                    settings.get_string('custom-speed-up-decoration') :
-                    '↑';
+                    settings.get_string('custom-speed-up-decoration') : '↑';
                 this._setAllLabelStyles();
                 break;
             case 'custom-usage-total-colour':
@@ -276,8 +273,7 @@ NetSpeedExtension.prototype = {
                 break;
             case 'custom-usage-total-decoration':
                 this._usageTotalDecoration = this._useCustomDecorations ?
-                    settings.get_string('custom-usage-total-decoration') :
-                    'Σ';
+                    settings.get_string('custom-usage-total-decoration') : 'Σ';
                 this._setAllLabelStyles();
                 break;
             case 'decimal-place':
