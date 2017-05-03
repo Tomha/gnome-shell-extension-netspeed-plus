@@ -9,7 +9,7 @@ NetSpeed Plus has a range of features not currently offered by other alternative
 - Only show the statistics you want, select from up/down/total speed and/or total usage
 - Chose how often the statistics update
 - Customise appearance with font family, size, colour, and more
-- Preserve usage statistics across extension restarts caused by logging out, locking the screen, etc.
+- Usage statistics are kept for the duration the system is booted but will persist across extension restarts caused by logging out, locking the screen, etc., and can be reset at any time by right clicking the extension in the panel.
 
 ![Monitoring](preview/Monitoring.png)
 
